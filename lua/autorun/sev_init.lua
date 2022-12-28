@@ -107,7 +107,7 @@ SEv = SEv or {
     toolCategories = { "SandEv Tools" }, -- Devmove tool categories
     errorData = { -- Send addon errors to a server
         databaseName = "sandev",
-        wsid = "",
+        wsid = "2908040257",
         url = "https://gerror.xalalau.com",
         patterns = { "sandev" }, -- Folder inside /lua
     },
