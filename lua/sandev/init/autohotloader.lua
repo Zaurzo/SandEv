@@ -215,7 +215,9 @@ local function HotloadSEv()
     includeOriginal = includeOriginal or _G.include
     function include(path)
         if not file.Exists(path, "LUA") or not string.find(path, "([\\/]+)") then
-            local fixedPath = string.gsub(string.GetPathFromFilename(debug.getinfo(2).short_src) .. path, "lua/", "")
+            local fixedPath = string.GetPathFromFilename(debug.getinfo(2).source) .. path
+            fixedPath = string.gsub(fixedPath, "@", "")
+            fixedPath = string.gsub(fixedPath, "lua/", "")
 
             if file.Exists(fixedPath, "LUA") then
                 path = fixedPath
