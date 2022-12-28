@@ -276,7 +276,7 @@ local function DownloadSEv()
     showMsg("For now the 'NPC Scene' tool is being used as a test subject")
 
     -- SEv wsid
-    local SEvWSID = 121182342
+    local SEvWSID = 2908040257
 
     -- Initialize persistent data
     if not sql.TableExists("SEv") then
@@ -290,7 +290,7 @@ local function DownloadSEv()
 
     -- Check for GMA updates and download a new version from workshop if needed
     steamworks.FileInfo(SEvWSID, function(result)
-        if tostring(result.updated) ~= version then
+        if tostring(result.updated) == version then
             local path = sql.Query("SELECT value FROM SEv WHERE key = 'gma_path';")[1].value
 
             showMsg("Using cached version")
