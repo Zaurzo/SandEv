@@ -83,7 +83,7 @@
     end
 
     -- Include the base
-    hook.Add("Initialize", BASE.luaFolder .. "_init", function()
+    hook.Add("SEvInit", BASE.luaFolder .. "_init", function(SEv)
         SEv:IncludeBase(BASE, PostInitCallback)
     end)
 
