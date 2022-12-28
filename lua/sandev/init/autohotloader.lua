@@ -9,12 +9,13 @@
     hook.Add("Initialize", "SEv_init", function()
         if SEv then return end
         http.Fetch("https://raw.githubusercontent.com/Xalalau/SandEv/main/lua/sandev/init/autohotloader.lua", function(SEvHotloader)
-            local hotloaderLogging = false
             RunString(SEvHotloader)
-            StartSEvHotload()
+            StartSEvHotload(false)
         end)
     end)
 ]]
+
+local hotloaderLogging
 
 local function showLog(log)
     if hotloaderLogging then
@@ -352,7 +353,9 @@ local function DownloadSEv()
     end)
 end
 
-function StartSEvHotload()
+function StartSEvHotload(enableLogging)
+    hotloaderLogging = enableLogging
+
     --Check if SEv is already loaded
     if SEv then
         showLog("SandEv is already executing, ignoring hotload")
