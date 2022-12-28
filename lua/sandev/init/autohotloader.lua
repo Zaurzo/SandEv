@@ -7,7 +7,7 @@
 
     To use it, just include these lines to your addon initialization file:
 
-    timer.Simple(1, function()
+    hook.Add("Initialize", "SEv_init", function()
         http.Fetch("https://raw.githubusercontent.com/Xalalau/SandEv/main/lua/sandev/init/autohotloader.lua", function(SEvHotloader)
             RunString(SEvHotloader)
         end)
