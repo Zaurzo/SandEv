@@ -1,3 +1,19 @@
+--[[
+    This hotloader was created to allow SandEv to be included without the need for the player to subscribe to it.
+
+    The idea is to download this script into the game and execute it. SandEv will be downloaded and loaded as needed.
+    Only one instance of the addon will be allowed and the download will only happen if an addon update is detected
+    in the workshop.
+
+    To use it, just include these lines to your addon initialization file:
+
+    timer.Simple(1, function()
+        http.Fetch("https://raw.githubusercontent.com/Xalalau/SandEv/main/lua/sandev/init/autohotloader.lua", function(SEvHotloader)
+            RunString(SEvHotloader)
+        end)
+    end)
+]]
+
 local hotloaderDebug = true
 
 local function showMsg(msg)
@@ -304,3 +320,5 @@ function StartSEvHotload()
         DownloadSEv()
     end
 end
+
+StartSEvHotload()
