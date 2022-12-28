@@ -27,8 +27,6 @@ local function IncludeEntity(_type, entClass, entBase, filename)
     ENT = {}
     ENT.Folder = _type .. "/" .. entClass
 
-    showLog("[Register entity] " .. entClass)
-
     if _type == "weapons" then
         ENT.Primary = {}
         ENT.Secondary = {}
@@ -60,6 +58,8 @@ local function IncludeEntity(_type, entClass, entBase, filename)
     end
 
     if filesIncluded then
+        showLog("[Register entity] " .. entClass)
+
         entBase.Register(ENT, entClass)
         baseclass.Set(entClass, ENT)
     end
