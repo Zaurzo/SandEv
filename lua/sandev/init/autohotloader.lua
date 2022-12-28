@@ -14,18 +14,20 @@
     end)
 ]]
 
-local hotloaderDebug = true
+local hotloaderLogging = true
 
-local function showMsg(msg)
-    if hotloaderDebug then
-        print("[SEv Auto Hotloader] " .. msg)
+local function showLog(log)
+    if hotloaderLogging then
+        print("[SEvLoader] " .. log)
     end
 end
 
 -- Load an entity
-local function IncludeEntity(_type, entClass, filename)
+local function IncludeEntity(_type, entClass, entBase, filename)
     ENT = {}
     ENT.Folder = _type .. "/" .. entClass
+
+    showLog("[Register entity] " .. entClass)
 
     if _type == "weapons" then
         ENT.Primary = {}
@@ -33,50 +35,55 @@ local function IncludeEntity(_type, entClass, filename)
     end
 
     if isstring(filename) then
+        AddCSLuaFile(_type .. "/" .. filename)
         include(_type .. "/" .. filename)
     else
-        include(ENT.Folder .. "/shared.lua")
         if SERVER then
-            include(ENT.Folder .. "/init.lua")
+            local files, dirs = file.Find(ENT.Folder .. "/*", "LUA")
+            for k, filename in ipairs(files) do
+                AddCSLuaFile(ENT.Folder .. "/" .. filename)
+            end
+
+            if file.Exists(ENT.Folder .. "/init.lua", "LUA") then
+                include(ENT.Folder .. "/init.lua")
+            end
         else
-            include(ENT.Folder .. "/cl_init.lua")
+            if file.Exists(ENT.Folder .. "/cl_init.lua", "LUA") then
+                include(ENT.Folder .. "/cl_init.lua")
+            end
         end
     end
 
-    scripted_ents.Register(ENT, entClass)
+    entBase.Register(ENT, entClass)
     baseclass.Set(entClass, ENT)
 
     ENT = nil
 end
 
 -- Load new sents and sweps
-local function HotloadEntities()
-    local types = { "entities", "weapons" }
+local function HotloadEntities(_type, entBase)
+    local files, dirs = file.Find(_type .. "/*", "LUA")
 
-    for k, _type in ipairs(types) do
-        local files, dirs = file.Find(_type .. "/*", "LUA")
+    -- Check for unregistered entities
 
-        -- Check for unregistered entities
+    -- Files
+    for k, filename in ipairs(files) do
+        local char1, char2, entClass = string.find(filename, "([%w_]*).lua")
 
-        -- Files
-        for k, filename in ipairs(files) do
-            local char1, char2, entClass = string.find(filename, "([%w_]*).lua")
-
-            -- Register new entities
-            if not baseclass.Get(entClass) then
-                IncludeEntity(_type, entClass, filename)
-            end
+        -- Register new entities
+        if not entBase.GetStored(entClass) then
+            IncludeEntity(_type, entClass, entBase, filename)
         end
+    end
 
-        -- Folders
-        for k, entClass in ipairs(dirs) do
-            -- Register new entities
-            if entClass ~= "gmod_tool" and not baseclass.Get(entClass) then
-                if file.Exists(_type .. "/" .. entClass .. "/init.lua", "LUA") or 
-                   file.Exists(_type .. "/" .. entClass .. "/cl_init.lua", "LUA")
-                   then
-                    IncludeEntity(_type, entClass, filename)
-                end
+    -- Folders
+    for k, entClass in ipairs(dirs) do
+        -- Register new entities
+        if entClass ~= "gmod_tool" and not entBase.GetStored(entClass) then
+            if file.Exists(_type .. "/" .. entClass .. "/init.lua", "LUA") or 
+                file.Exists(_type .. "/" .. entClass .. "/cl_init.lua", "LUA")
+                then
+                IncludeEntity(_type, entClass, entBase, filename)
             end
         end
     end
@@ -112,6 +119,8 @@ local function HotloadTools()
 
         -- Register new tools
         if not SWEP.Tool[toolMode] then
+            showLog("[Register tool] " .. toolMode)
+
             foundToolsToMount = true
 
             -- Create the tool object
@@ -190,7 +199,7 @@ local function HotloadSEv()
         end
 
         if file.Exists(path, "LUA") then
-            showMsg("[AddCSLuaFile] " .. path)
+            showLog("[AddCSLuaFile] " .. path)
             AddCSLuaFileOriginal(path)
         end
     end
@@ -198,32 +207,55 @@ local function HotloadSEv()
     -- Include detour: helps to debug and workarounds the CLIENT include datapack issue
     includeOriginal = includeOriginal or _G.include
     function include(path)
+        if not file.Exists(path, "LUA") or not string.find(path, "([\\/]+)") then
+            local fixedPath = string.gsub(string.GetPathFromFilename(debug.getinfo(2).short_src) .. path, "lua/", "")
+
+            if file.Exists(fixedPath, "LUA") then
+                path = fixedPath
+            end
+        end
+
         if CLIENT and (detourCLIncludeOnSingleplayer or not game.SinglePlayer()) then
-            showMsg("[include cl hack] " .. path)
             local fileContent = file.Read(path, 'LUA')
-            RunString(fileContent, path)
+
+            if fileContent then
+                showLog("[include cl hack] " .. path)
+                RunString(fileContent, path)
+            else
+                showLog("[include cl hack] FAILED TO INCLUDE " .. path)
+            end
         else
-            showMsg("[include] " .. path)
+            showLog("[include] " .. path)
             includeOriginal(path)
         end
     end
 
+    -- Loading order
+    -- https://wiki.facepunch.com/gmod/Lua_Loading_Order
+
     -- Load all lua files
     include(initFile)
+
+    -- Load new scripted weapons
+    HotloadEntities("weapons", weapons)
 
     -- Load new tools
     HotloadTools()
 
-    -- Load new sents and sweps
-    HotloadEntities()
-
-    -- Remove detours
-    AddCSLuaFile = AddCSLuaFileOriginal
-    include = includeOriginal
+    -- Load new scripted entities
+    HotloadEntities("entities", scripted_ents)
 
     -- Start SandEv
-    local sev_init = hook.GetTable()["InitPostEntity"]["sev_init"]
-    sev_init()
+    timer.Simple(1, function()
+        local sev_init = hook.GetTable()["InitPostEntity"]["sev_init"]
+        sev_init()
+    end)
+
+    -- Remove detours
+    timer.Simple(1.5, function()
+        AddCSLuaFile = AddCSLuaFileOriginal
+        include = includeOriginal
+    end)
 end
 
 if SERVER then
@@ -249,7 +281,7 @@ local function MountSEv(path)
     timer.Create(path, 0.3, 0, function()
         for k, _file in ipairs(files) do
             if file.Exists(_file, "GAME") then
-                showMsg("[file.Exists]: " .. _file)
+                showLog("[file.Exists]: " .. _file)
                 mountedFiles = mountedFiles + 1
             end
         end
@@ -272,7 +304,7 @@ end
 local function DownloadSEv()
     if SERVER then return end
 
-    showMsg("SandEv Auto Hotloader is starting...")
+    showLog("SandEv Auto Hotloader is starting...")
 
     -- SEv wsid
     local SEvWSID = 2908040257
@@ -292,10 +324,10 @@ local function DownloadSEv()
         if tostring(result.updated) == version then
             local path = sql.Query("SELECT value FROM SEv WHERE key = 'gma_path';")[1].value
 
-            showMsg("Using cached version")
+            showLog("Using cached version")
             MountSEv(path)
         else
-            showMsg("Downloading new version...")
+            showLog("Downloading new version...")
             steamworks.DownloadUGC(SEvWSID, function(path, _file)
                 sql.Query("UPDATE SEv SET value = '" .. result.updated .. "' WHERE key = 'version';")
                 sql.Query("UPDATE SEv SET value = '" .. path .. "' WHERE key = 'gma_path';")
@@ -309,7 +341,7 @@ end
 function StartSEvHotload()
     --Check if SEv is already loaded
     if SEv then
-        showMsg("SandEv is already executing, ignoring hotload")
+        showLog("SandEv is already executing, ignoring hotload")
         return
     end
 
