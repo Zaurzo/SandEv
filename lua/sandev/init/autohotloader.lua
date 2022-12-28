@@ -1,11 +1,10 @@
 --[[
-    This hotloader was created to allow SandEv to be included without the need for the player to subscribe to it.
+    This hotloader allows SandEv to be included without the need for the player to subscribe to it.
 
-    The idea is to download this script into the game and execute it. SandEv will be downloaded and loaded as needed.
-    Only one instance of the addon will be allowed and the download will only happen if an addon update is detected
+    Only one instance of SandEv will be allowed and the download will only happen if an update is released
     in the workshop.
 
-    To use it, just include these lines to your addon initialization file:
+    To use the hotloader, just include these lines in your shared initialization file (e.g. lua/autorun/mystuff.lua):
 
     hook.Add("Initialize", "SEv_init", function()
         http.Fetch("https://raw.githubusercontent.com/Xalalau/SandEv/main/lua/sandev/init/autohotloader.lua", function(SEvHotloader)
@@ -14,7 +13,7 @@
     end)
 ]]
 
-local hotloaderLogging = true
+local hotloaderLogging = false
 
 local function showLog(log)
     if hotloaderLogging then
