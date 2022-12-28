@@ -179,7 +179,7 @@ end
 
 local function HotloadSEv()
     -- Detours
-    local initFile = "autorun/npc_scene_init.lua"
+    local initFile = "autorun/sev_init.lua"
     local detourCLIncludeOnSingleplayer = true
 
     -- AddCSLuaFile detour: helps to debug
