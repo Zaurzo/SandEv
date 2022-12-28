@@ -272,8 +272,7 @@ end
 local function DownloadSEv()
     if SERVER then return end
 
-    showMsg("Welcome to the future 'SandEv Auto Hotloader'")
-    showMsg("For now the 'NPC Scene' tool is being used as a test subject")
+    showMsg("SandEv Auto Hotloader is starting...")
 
     -- SEv wsid
     local SEvWSID = 2908040257
