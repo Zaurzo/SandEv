@@ -34,9 +34,12 @@ local function IncludeEntity(_type, entClass, entBase, filename)
         ENT.Secondary = {}
     end
 
+    local filesIncluded = false
+
     if isstring(filename) then
         AddCSLuaFile(_type .. "/" .. filename)
         include(_type .. "/" .. filename)
+        filesIncluded = true
     else
         if SERVER then
             local files, dirs = file.Find(ENT.Folder .. "/*", "LUA")
@@ -46,16 +49,20 @@ local function IncludeEntity(_type, entClass, entBase, filename)
 
             if file.Exists(ENT.Folder .. "/init.lua", "LUA") then
                 include(ENT.Folder .. "/init.lua")
+                filesIncluded = true
             end
         else
             if file.Exists(ENT.Folder .. "/cl_init.lua", "LUA") then
                 include(ENT.Folder .. "/cl_init.lua")
+                filesIncluded = true
             end
         end
     end
 
-    entBase.Register(ENT, entClass)
-    baseclass.Set(entClass, ENT)
+    if filesIncluded then
+        entBase.Register(ENT, entClass)
+        baseclass.Set(entClass, ENT)
+    end
 
     ENT = nil
 end
