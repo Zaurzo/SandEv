@@ -247,6 +247,11 @@ local function HotloadSEv()
 
     -- Start SandEv
     timer.Simple(1, function()
+        if CLIENT then
+            local sev_portal_init = hook.GetTable()["InitPostEntity"]["sev_portal_init"]
+            sev_portal_init()
+        end
+
         local sev_init = hook.GetTable()["InitPostEntity"]["sev_init"]
         sev_init()
     end)
