@@ -139,6 +139,8 @@ local function HotloadTools()
         end
     end
 
+    local TOOLS_LIST = SWEP.Tool
+
     toolObj = nil
     SWEP = nil
 
@@ -154,8 +156,6 @@ local function HotloadTools()
 
         -- Rebuild the spawnmenu
         if CLIENT then
-            local TOOLS_LIST = SWEP.Tool
-
             hook.Add("PopulateToolMenu", "AddSToolsToMenu", function()
                 for toolMode, TOOL in pairs(TOOLS_LIST) do
                     if TOOL.AddToMenu ~= false then
