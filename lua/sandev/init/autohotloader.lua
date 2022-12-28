@@ -13,7 +13,7 @@
     end)
 ]]
 
-local hotloaderLogging = false
+local hotloaderLogging = true
 
 local function showLog(log)
     if hotloaderLogging then
