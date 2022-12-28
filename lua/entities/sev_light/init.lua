@@ -1,0 +1,51 @@
+AddCSLuaFile("cl_init.lua")
+AddCSLuaFile("shared.lua")
+
+include("shared.lua")
+
+function ENT:Setup(base, eventName, entName, vec, r, g, b, brightness, decay, size)
+    self:Spawn()
+
+    local vecA = vec + Vector(10, 10, 10)
+    local vecB = vec - Vector(10, 10, 10)
+
+    self:SetVar("eventName", eventName)
+    self:SetVar("entName", entName)
+    self:SetVar("vecA", vecA)
+    self:SetVar("vecB", vecB)
+    self:SetVar("vecCenter", vec)
+    self:SetVar("color", Color(255, 255, 255, 255)) -- White
+
+    self:SetPos(vec)
+
+    self:SetNWInt("r", r)
+    self:SetNWInt("g", g)
+    self:SetNWInt("b", b)
+    self:SetNWInt("brightness", brightness)
+    self:SetNWInt("decay", decay)
+    self:SetNWInt("size", size)
+
+    self:SetNWBool("state", true)
+
+    base.Event:SetRenderInfoEntity(self)
+end
+
+function ENT:SetOn(state)
+    self:SetNWBool("state", state and true or false)
+end
+
+function ENT:GetOn()
+    self:GetNWBool("state")
+end
+
+function ENT:GetBrightness()
+    self:GetNWInt("brightness")
+end
+
+function ENT:SetBrightness(brightness)
+    self:SetNWInt("brightness", brightness)
+end
+
+function ENT:Toggle()
+    self:SetNWBool("state", not self:GetNWBool("state"))
+end
