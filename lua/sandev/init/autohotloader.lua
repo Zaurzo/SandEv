@@ -9,12 +9,12 @@
     hook.Add("Initialize", "SEv_init", function()
         if SEv then return end
         http.Fetch("https://raw.githubusercontent.com/Xalalau/SandEv/main/lua/sandev/init/autohotloader.lua", function(SEvHotloader)
+            local hotloaderLogging = false
             RunString(SEvHotloader)
+            StartSEvHotload()
         end)
     end)
 ]]
-
-local hotloaderLogging = true
 
 local function showLog(log)
     if hotloaderLogging then
@@ -363,5 +363,3 @@ function StartSEvHotload()
         DownloadSEv()
     end
 end
-
-StartSEvHotload()
