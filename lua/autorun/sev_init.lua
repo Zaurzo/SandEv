@@ -101,6 +101,7 @@
 
 SEv = SEv or {
     devMode = false, -- The devMode enables access to SandEv's in-game commands and messages. They are used to control, visualize and create events
+    id = "sandev", -- Stores base id
     luaFolder = "sandev", -- Stores events and libs
     dataFolder = "sandev", -- Stores memories and custom data
     bases = {}, -- External bases, using the same structure as SEv table (they'll be loaded into the map)
@@ -283,15 +284,25 @@ function SEv:IncludeBase(base, PostInitCallback)
     end
 end
 
+-- SandEv extra init
+local function PostInitCallback(initialized)
+    if not initialized then
+        SEv = nil
+        return
+    end
+end
+
 -- Bases init
 hook.Add("InitPostEntity", "sev_init", function()
-    -- Bases initialization
+    -- Register bases
     hook.Run("SEvInit", SEv)
 
     -- Check gamemode (sandbox family only)
     local gamemode = gmod.GetGamemode()
 
     if not gamemode.IsSandboxDerived then
+        PostInitCallback(false)
+
         for k, base in ipairs(SEv.bases) do
             if base.PostInitCallback then
                 base.PostInitCallback(false)
@@ -311,9 +322,58 @@ hook.Add("InitPostEntity", "sev_init", function()
 	game.AddParticles("particles/train_steam.pcf")
 	PrecacheParticleSystem("steam_train")
 
+    -- Init SEv
+    do
+        -- Create data folders
+        file.CreateDir(SEv.dataFolder)
+
+        -- Load init functions
+        SEv:IncludeFiles(SEv.luaFolder .. "/init/", nil, true)
+
+        -- Register ErrorAPI entries
+        local addonData = ErrorAPI:RegisterAddon(SEv.errorData.dataSEvName, SEv.errorData.url, SEv.errorData.patterns, SEv.errorData.wsid)
+
+        if addonData then
+            hook.Add(SEv.id .. "_devmode", SEv.luaFolder .. "_control_error_api", function(state)
+                addonData.enabled = not state
+            end)
+        end
+
+        -- Set tool categories
+        if CLIENT then
+            SEv:RegisterToolCategories(SEv)
+        end
+
+        -- Include libs
+        SEv:IncludeFiles(SEv.luaFolder .. "/libs/", nil, true)
+
+        -- Initialize libs
+        SEv.Workshop:InitializeList()
+
+        if SERVER then
+            SEv.Map:LoadGroundNodes()
+        else
+            timer.Simple(0.4, function() -- Just to be sure
+                SEv.Addon:StealSpysNightVisionControl()
+            end)
+        end
+
+        -- Set devmode
+        if SEv.devMode then
+            base:EnableDevMode()
+        end
+
+        -- Run last initializations
+        PostInitCallback(true)
+
+        -- Print message
+        print("[SandEv] Loaded itself")
+    end
+
+    -- Init bases
     for k, base in ipairs(SEv.bases) do
         -- Initialize net variables
-        if SERVER and base ~= SEv then
+        if SERVER then
             SEv:AddBaseNets(base)
         end
     
@@ -324,9 +384,7 @@ hook.Add("InitPostEntity", "sev_init", function()
         SEv:IncludeFiles(base.luaFolder .. "/init/", nil, true)
 
         -- Add devMode
-        if base ~= SEv then
-            SEv:AddDevModeToBase(base)
-        end
+        SEv:AddDevModeToBase(base)
 
         -- Register ErrorAPI entries
         if base.errorData then
@@ -347,28 +405,15 @@ hook.Add("InitPostEntity", "sev_init", function()
         -- Include libs
         SEv:IncludeFiles(base.luaFolder .. "/libs/", nil, true)
 
-        -- Initialize base libs
-        if base == SEv then
-            SEv.Workshop:InitializeList()
-
-            if SERVER then
-                SEv.Map:LoadGroundNodes()
-            else
-                timer.Simple(0.4, function() -- Just to be sure
-                    SEv.Addon:StealSpysNightVisionControl()
-                end)
-            end
-        end
-
         -- Initialize custom lobby systems
-        if base ~= SEv and base.enableLobby then
+        if base.enableLobby then
             base.Lobby = table.Copy(SEv.Lobby)
 
             base.Lobby.base = base
         end
 
         -- Initialize custom event systems
-        if base ~= SEv and base.enableEvents then
+        if base.enableEvents then
             base.Event = table.Copy(SEv.Event)
 
             base.Event.base = base
@@ -409,14 +454,14 @@ hook.Add("InitPostEntity", "sev_init", function()
             end
         end
 
-        -- Run custom initializations
-        if base.PostInitCallback then
-            base.PostInitCallback(true)
-        end
-
         -- Set devmode
         if base.devMode then
             base:EnableDevMode()
+        end
+
+        -- Run last initializations
+        if base.PostInitCallback then
+            base.PostInitCallback(true)
         end
 
         -- Print message
@@ -432,14 +477,3 @@ hook.Add("InitPostEntity", "sev_init", function()
     SEv.Util:BlockDirectLibCalls(SEv.Event.Memory.Incompatibility)
     SEv.Util:BlockDirectLibCalls(SEv.Event.Memory.Dependency)
 end)
-
--- SandEv extra init
-local function Init(initialized)
-    if not initialized then
-        SEv = nil
-        return
-    end
-end
-
--- Add SandEv itself as a base
-SEv:IncludeBase(SEv, Init)

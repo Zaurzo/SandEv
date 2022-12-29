@@ -1,3 +1,5 @@
+-- Bases devmode
+
 function SEv:AddDevModeToBase(base)
     function base:EnableDevMode()
         base.devMode = true
@@ -83,4 +85,59 @@ function SEv:AddDevModeToBase(base)
             base[toggleFuncName]()
         end)
     end
+end
+
+-- SandEv devmode
+
+function SEv:EnableDevMode()
+    SEv.devMode = true
+
+    hook.Run(SEv.id .. "_devmode", true)
+    
+    if SERVER then
+        RunConsoleCommand("state_devmode_" .. SEv.id, "1")
+    end
+end
+
+function SEv:DisableDevMode()
+    SEv.devMode = false
+
+    hook.Run(SEv.id .. "_devmode", false)
+
+    if SERVER then
+        RunConsoleCommand("state_devmode_" .. SEv.id , "0")
+    end
+end
+
+local SEvDevModeState = CreateConVar("state_devmode_" .. SEv.id , "0", { FCVAR_ARCHIVE, FCVAR_REPLICATED }) -- Just to store the state between games
+
+if SERVER then
+    function SEv:ToggleDevMode()
+        local toggleFuncName = SEv.devMode and "DisableDevMode" or "EnableDevMode"
+
+        SEv[toggleFuncName]()
+
+        net.Start(SEv.id .. "_toggle_devmode")
+        net.WriteString(toggleFuncName)
+        net.Broadcast()
+
+        print("[SandEv] " .. SEv.id .. " devmode is " .. (SEv.devMode and "On" or "Off"))
+    end
+
+    concommand.Add("devmode_" .. SEv.id .. "_toggle", function() SEv:ToggleDevMode() end)    
+
+    if SEvDevModeState:GetBool() then
+        SEv:ToggleDevMode()
+    end
+else
+    hook.Add(SEv.id .. "_memories_received", SEv.id .. "_auto_dev_mode_cl", function()
+        if GetConVar("state_devmode_" .. SEv.id):GetBool() then
+            SEv:EnableDevMode()
+        end
+    end)
+
+    net.Receive(SEv.id .. "_toggle_devmode", function()
+        local toggleFuncName = net.ReadString()
+        SEv[toggleFuncName]()
+    end)
 end
