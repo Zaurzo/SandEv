@@ -331,7 +331,7 @@ hook.Add("InitPostEntity", "sev_init", function()
         SEv:IncludeFiles(SEv.luaFolder .. "/init/", nil, true)
 
         -- Register ErrorAPI entries
-        local addonData = ErrorAPI:RegisterAddon(SEv.errorData.dataSEvName, SEv.errorData.url, SEv.errorData.patterns, SEv.errorData.wsid)
+        local addonData = ErrorAPI:RegisterAddon(SEv.errorData.databaseName, SEv.errorData.url, SEv.errorData.patterns, SEv.errorData.wsid)
 
         if addonData then
             hook.Add(SEv.id .. "_devmode", SEv.luaFolder .. "_control_error_api", function(state)
