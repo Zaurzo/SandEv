@@ -16,11 +16,45 @@
 ]]
 
 local hotloaderLogging
+local hotloaderAddonInfo = {}
+local isSEvMounted = false
 
-local function showLog(log)
+local function ShowLog(log)
     if hotloaderLogging then
         print("[SEvLoader] " .. log)
     end
+end
+
+-- Show the hotloaded addon as mounted addon
+SEv_engineGetAddons = SEv_engineGetAddons or engine.GetAddons
+
+function engine.GetAddons()
+    local mountedAddons = SEv_engineGetAddons()
+
+    if isSEvMounted then
+        table.Merge(mountedAddons, hotloaderAddonInfo)
+    end
+
+    return mountedAddons
+end
+
+if SERVER then
+    util.AddNetworkString("sev_hotloader_add_addon_info")
+
+    net.Receive("sev_hotloader_add_addon_info", function(len, ply)
+        local addonInfo = net.ReadTable()
+        table.insert(hotloaderAddonInfo, addonInfo)
+    end)
+end
+
+local function AddAddonInfo(addonInfo)
+    if SERVER then return end
+
+    table.insert(hotloaderAddonInfo, addonInfo)
+
+    net.Start("sev_hotloader_add_addon_info")
+    net.WriteTable(addonInfo)
+    net.SendToServer()
 end
 
 -- Load an entity
@@ -59,7 +93,7 @@ local function IncludeEntity(_type, entClass, entBase, filename)
     end
 
     if filesIncluded then
-        showLog("[Register entity] " .. entClass)
+        ShowLog("[Register entity] " .. entClass)
 
         entBase.Register(ENT, entClass)
         baseclass.Set(entClass, ENT)
@@ -127,7 +161,7 @@ local function HotloadTools()
 
         -- Register new tools
         if not SWEP.Tool[toolMode] then
-            showLog("[Register tool] " .. toolMode)
+            ShowLog("[Register tool] " .. toolMode)
 
             foundToolsToMount = true
 
@@ -207,7 +241,7 @@ local function HotloadSEv()
         end
 
         if file.Exists(path, "LUA") then
-            showLog("[AddCSLuaFile] " .. path)
+            ShowLog("[AddCSLuaFile] " .. path)
             AddCSLuaFileOriginal(path)
         end
     end
@@ -229,13 +263,13 @@ local function HotloadSEv()
             local fileContent = file.Read(path, 'LUA')
 
             if fileContent then
-                showLog("[include cl hack] " .. path)
+                ShowLog("[include cl hack] " .. path)
                 RunString(fileContent, path)
             else
-                showLog("[include cl hack] FAILED TO INCLUDE " .. path)
+                ShowLog("[include cl hack] FAILED TO INCLUDE " .. path)
             end
         else
-            showLog("[include] " .. path)
+            ShowLog("[include] " .. path)
             includeOriginal(path)
         end
     end
@@ -254,6 +288,9 @@ local function HotloadSEv()
 
     -- Load new scripted entities
     HotloadEntities("entities", scripted_ents)
+
+    -- At this point SandEv is fully mounted
+    isSEvMounted = true
 
     -- Start SandEv
     timer.Simple(1, function()
@@ -296,7 +333,7 @@ local function MountSEv(path)
     timer.Create(path, 0.3, 0, function()
         for k, _file in ipairs(files) do
             if file.Exists(_file, "GAME") then
-                showLog("[file.Exists]: " .. _file)
+                ShowLog("[file.Exists]: " .. _file)
                 mountedFiles = mountedFiles + 1
             end
         end
@@ -319,10 +356,10 @@ end
 local function DownloadSEv()
     if SERVER then return end
 
-    showLog("SandEv Auto Hotloader is starting...")
+    ShowLog("SandEv Auto Hotloader is starting...")
 
     -- SEv wsid
-    local SEvWSID = 2908040257
+    local SEvWSID = "2908040257"
 
     -- Initialize persistent data
     if not sql.TableExists("SEv") then
@@ -336,20 +373,40 @@ local function DownloadSEv()
 
     -- Check for GMA updates and download a new version from workshop if needed
     steamworks.FileInfo(SEvWSID, function(result)
-        if tostring(result.updated) == version then
-            local path = sql.Query("SELECT value FROM SEv WHERE key = 'gma_path';")[1].value
+        local path
 
-            showLog("Using cached version")
+        if tostring(result.updated) == version then
+            path = sql.Query("SELECT value FROM SEv WHERE key = 'gma_path';")[1].value
+
+            ShowLog("Using cached version")
             MountSEv(path)
         else
-            showLog("Downloading new version...")
-            steamworks.DownloadUGC(SEvWSID, function(path, _file)
+            ShowLog("Downloading new version...")
+            steamworks.DownloadUGC(SEvWSID, function(_path, _file)
+                path = _path
+
                 sql.Query("UPDATE SEv SET value = '" .. result.updated .. "' WHERE key = 'version';")
                 sql.Query("UPDATE SEv SET value = '" .. path .. "' WHERE key = 'gma_path';")
 
                 MountSEv(path)
             end)
         end
+
+        -- Register addon info
+        local addonInfo = {
+            downloaded = true,
+            file = path,
+            models = 0,
+            mounted = true,
+            size = result.size,
+            tags = result.tags,
+            timeadded = os.time(),
+            title = result.title,
+            updated = result.updated,
+            wsid = SEvWSID
+        }
+
+        AddAddonInfo(addonInfo)
     end)
 end
 
@@ -358,7 +415,7 @@ function StartSEvHotload(enableLogging)
 
     --Check if SEv is already loaded
     if SEv then
-        showLog("SandEv is already executing, ignoring hotload")
+        ShowLog("SandEv is already executing, ignoring hotload")
         return
     end
 
