@@ -37,18 +37,102 @@ function SEv.Workshop:GetMountedByTag(tag)
     return list
 end
 
-function SEv.Workshop:ReadGmaHeader(path)
-    -- TO-DO https://github.com/Facepunch/gmad/blob/master/include/AddonReader.h
-    local gma = file.Open(path, "rb", "MOD")
+-- Get all the gma information before the file offset
+-- https://github.com/Facepunch/gmad/blob/master/src/create_gmad.cpp#L60
+local function GetGMAInfo(gma)
+    -- To-do: create a "File lib" to add these useful conversions I needed to do here -Xala
+    local function Int64(_file) -- little-endian
+        local low  = _file:ReadLong() -- 32-bit integer
+        local high = _file:ReadLong()
+        return high * 0x100000000 + low -- high * 2^32 + low = 64-bit integer
+    end
+    local function UInt64(_file) -- little-endian
+        local low  = _file:ReadULong() -- Unsigned 32-bit integer
+        local high = _file:ReadULong()
+        return high * 0x100000000 + low -- high * 2^32 + low = Unsigned 64-bit integer
+    end
 
-    if not gma then return end
-
+    if gma:Read(4) ~= "GMAD" then return end
+    
     local gmaInfo = {}
-    local gmaHeader = gma:Read(65536)
 
-    -- Get data here
+    -- Header
+    gmaInfo.header = {
+        -- Ident
+        identification = "GMAD",
+        -- Version
+        version = gma:Read(1)
+    }
 
-    gma:Close()
+    -- SteamID, unnused
+    gma:Skip(8) 
 
+    -- Timestamp
+    gmaInfo.timeStamp = UInt64(gma)
+    --gmaInfo.timeStamp = gma:ReadDouble()
+
+    -- Required content, probably unnused
+    while not gma:EndOfFile() and gma:Read(1) ~= '\0' do end
+
+    -- Title
+    gmaInfo.title = {}
+    while not gma:EndOfFile() do
+        local char = gma:Read(1)
+        if char == '\0' then break end
+        gmaInfo.title[#gmaInfo.title + 1] = char
+    end
+    gmaInfo.title = table.concat(gmaInfo.title)
+
+    -- Description
+    gmaInfo.description = {}
+    while not gma:EndOfFile() do
+        local char = gma:Read(1)
+        if char == '\0' then break end
+        gmaInfo.description[#gmaInfo.description + 1] = char
+    end
+    gmaInfo.description = table.concat(gmaInfo.description)
+
+    -- Author name, unnused
+    gma:Skip(12)
+
+    -- Version, unnused
+    gma:Skip(4)
+
+    -- File list
+    gmaInfo.files = {}
+    while not gma:EndOfFile() do
+        -- File number
+        local number = gma:ReadULong()
+        if number == 0 then break end
+
+        -- File name
+        local name = {}
+        while not gma:EndOfFile() do
+            local char = gma:Read(1)
+            if char == '\0' then break end
+            name[#name + 1] = char
+        end
+        name = table.concat(name)
+
+        -- File size
+        local size = Int64(gma)
+
+        -- File CRC
+        local crc = gma:ReadULong()
+
+        table.insert(gmaInfo.files, {
+            name = name,
+            size = size,
+            crc = crc
+        })
+    end
+
+    -- File offset
+    local offset = gma:Tell()
+    for k, fileInfo in ipairs(gmaInfo.files) do
+        fileInfo.offset = offset
+        offset = offset + fileInfo.size
+    end
+    
     return gmaInfo
 end
