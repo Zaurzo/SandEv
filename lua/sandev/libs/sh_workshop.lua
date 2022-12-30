@@ -37,7 +37,7 @@ function SEv.Workshop:GetMountedByTag(tag)
     return list
 end
 
--- Get all the gma information before the file offset
+-- Get all the gma information
 -- https://github.com/Facepunch/gmad/blob/master/src/create_gmad.cpp#L60
 local function GetGMAInfo(gma)
     -- To-do: create a "File lib" to add these useful conversions I needed to do here -Xala
