@@ -9,9 +9,9 @@ function SEv.Net:SendString(string, callbackName, ply)
     local maxSpeed = chunkSize / 1000 / 1024 -- 1 MBps
 
     -- 3 minutes to remove possible memory leaks
-    sendTab[chunksID] = chunksSubID
+    SEv.Net.sendTab[chunksID] = chunksSubID
     timer.Create(chunksID, 180, 1, function()
-        sendTab[chunksID] = nil
+        SEv.Net.sendTab[chunksID] = nil
     end)
 
     for i = 1, totalChunks, 1 do
@@ -21,13 +21,13 @@ function SEv.Net:SendString(string, callbackName, ply)
         local chunk = string.sub(compressedString, startByte, endByte)
 
         timer.Simple(i * maxSpeed, function()
-            if sendTab[chunksID] ~= chunksSubID then return end
+            if SEv.Net.sendTab[chunksID] ~= chunksSubID then return end
 
             local isLastChunk = i == totalChunks
 
             net.Start("sev_net_send_string")
             net.WriteString(chunksID)
-            net.WriteUInt(sendTab[chunksID], 32)
+            net.WriteUInt(SEv.Net.sendTab[chunksID], 32)
             net.WriteUInt(#chunk, 16)
             net.WriteData(chunk, #chunk)
             net.WriteBool(isLastChunk)
@@ -43,7 +43,7 @@ function SEv.Net:SendString(string, callbackName, ply)
             end
 
             if isLastChunk then
-                sendTab[chunksID] = nil
+                SEv.Net.sendTab[chunksID] = nil
             end
         end)
     end
