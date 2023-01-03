@@ -69,7 +69,6 @@ local function GetGMAInfo(gma)
 
     -- Timestamp
     gmaInfo.timeStamp = UInt64(gma)
-    --gmaInfo.timeStamp = gma:ReadDouble()
 
     -- Required content, probably unnused
     while not gma:EndOfFile() and gma:Read(1) ~= '\0' do end
