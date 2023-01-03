@@ -29,7 +29,7 @@ function SEv.Workshop:GetMountedByTag(tag)
     local list = {}
 
     for k, addonTab in ipairs(engine.GetAddons()) do
-        if addonTab.mounted and string.find(addonTab.tags, "NPC") then
+        if addonTab.mounted then
             table.insert(list, addonTab)
         end
     end
