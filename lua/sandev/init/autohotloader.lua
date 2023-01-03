@@ -58,13 +58,13 @@ local function AddAddonInfo(addonInfo)
 end
 
 -- Load an entity
-local function IncludeEntity(_type, entClass, entBase, filename)
-    ENT = {}
-    ENT.Folder = _type .. "/" .. entClass
+local function IncludeEntity(_type, objName, entBase, entClass, filename)
+    _G[objName] = {}
+    _G[objName].Folder = _type .. "/" .. entClass
 
     if _type == "weapons" then
-        ENT.Primary = {}
-        ENT.Secondary = {}
+        _G[objName].Primary = {}
+        _G[objName].Secondary = {}
     end
 
     local filesIncluded = false
@@ -75,18 +75,18 @@ local function IncludeEntity(_type, entClass, entBase, filename)
         filesIncluded = true
     else
         if SERVER then
-            local files, dirs = file.Find(ENT.Folder .. "/*", "LUA")
+            local files, dirs = file.Find(_G[objName].Folder .. "/*", "LUA")
             for k, filename in ipairs(files) do
-                AddCSLuaFile(ENT.Folder .. "/" .. filename)
+                AddCSLuaFile(_G[objName].Folder .. "/" .. filename)
             end
 
-            if file.Exists(ENT.Folder .. "/init.lua", "LUA") then
-                include(ENT.Folder .. "/init.lua")
+            if file.Exists(_G[objName].Folder .. "/init.lua", "LUA") then
+                include(_G[objName].Folder .. "/init.lua")
                 filesIncluded = true
             end
         else
-            if file.Exists(ENT.Folder .. "/cl_init.lua", "LUA") then
-                include(ENT.Folder .. "/cl_init.lua")
+            if file.Exists(_G[objName].Folder .. "/cl_init.lua", "LUA") then
+                include(_G[objName].Folder .. "/cl_init.lua")
                 filesIncluded = true
             end
         end
@@ -99,11 +99,11 @@ local function IncludeEntity(_type, entClass, entBase, filename)
         baseclass.Set(entClass, ENT)
     end
 
-    ENT = nil
+    _G[objName] = nil
 end
 
 -- Load new sents and sweps
-local function HotloadEntities(_type, entBase)
+local function HotloadEntities(_type, objName, entBase)
     local files, dirs = file.Find(_type .. "/*", "LUA")
 
     -- Check for unregistered entities
@@ -114,7 +114,7 @@ local function HotloadEntities(_type, entBase)
 
         -- Register new entities
         if not entBase.GetStored(entClass) then
-            IncludeEntity(_type, entClass, entBase, filename)
+            IncludeEntity(_type, objName, entBase, entClass, filename)
         end
     end
 
@@ -125,7 +125,7 @@ local function HotloadEntities(_type, entBase)
             if file.Exists(_type .. "/" .. entClass .. "/init.lua", "LUA") or 
                 file.Exists(_type .. "/" .. entClass .. "/cl_init.lua", "LUA")
                 then
-                IncludeEntity(_type, entClass, entBase, filename)
+                IncludeEntity(_type, objName, entBase, entClass, filename)
             end
         end
     end
@@ -281,13 +281,13 @@ local function HotloadSEv()
     include(initFile)
 
     -- Load new scripted weapons
-    HotloadEntities("weapons", weapons)
+    HotloadEntities("weapons", "SWEP", weapons)
 
     -- Load new tools
     HotloadTools()
 
     -- Load new scripted entities
-    HotloadEntities("entities", scripted_ents)
+    HotloadEntities("entities", "ENT", scripted_ents)
 
     -- At this point SandEv is fully mounted
     isSEvMounted = true
