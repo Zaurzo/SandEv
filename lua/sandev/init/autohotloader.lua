@@ -229,9 +229,10 @@ local function HotloadTools()
 end
 
 local function HotloadSEv()
-    -- Detours
     local initFile = "autorun/sev_init.lua"
     local detourCLIncludeOnSingleplayer = true
+
+    -- Detours
 
     -- AddCSLuaFile detour: helps to debug
     AddCSLuaFileOriginal = AddCSLuaFileOriginal or _G.AddCSLuaFile
