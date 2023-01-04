@@ -376,15 +376,15 @@ hook.Add("InitPostEntity", "sev_init", function()
         if SERVER then
             SEv:AddBaseNets(base)
         end
-    
+
+        -- Add devMode
+        SEv:AddDevModeToBase(base)
+
         -- Create data folders
         file.CreateDir(base.dataFolder)
 
         -- Load init functions
         SEv:IncludeFiles(base.luaFolder .. "/init/", nil, true)
-
-        -- Add devMode
-        SEv:AddDevModeToBase(base)
 
         -- Register ErrorAPI entries
         if base.errorData then
