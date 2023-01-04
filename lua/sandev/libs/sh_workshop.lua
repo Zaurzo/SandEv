@@ -39,6 +39,27 @@ end
 
 -- Get all the gma information
 -- https://github.com/Facepunch/gmad/blob/master/src/create_gmad.cpp#L60
+--[[
+    Returns: nil if not a valid gma file or
+    {
+        header = {
+            identification = string,
+            version = number or string, idk
+        },
+        timeStamp = number unix timestamp in seconds,
+        title = string title,
+        description = string description,
+        files = {
+            {
+                name = string name,
+                size = number size,
+                crc = number crc,
+                offset = number offset
+            },
+            ...
+        }
+    }
+]]
 local function GetGMAInfo(gma)
     -- To-do: create a "File lib" to add these useful conversions I needed to do here -Xala
     local function Int64(_file) -- little-endian
