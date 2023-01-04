@@ -83,7 +83,7 @@
     end
 
     -- Include the base
-    hook.Add("SEvInit", BASE.luaFolder .. "_init", function(SEv)
+    hook.Add("sandev_init", BASE.luaFolder, function(SEv)
         SEv:IncludeBase(BASE, PostInitCallback)
     end)
 
