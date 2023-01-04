@@ -295,7 +295,7 @@ end
 -- Bases init
 hook.Add("InitPostEntity", "sev_init", function()
     -- Register bases
-    hook.Run("SEvInit", SEv)
+    hook.Run("sandev_init", SEv)
 
     -- Check gamemode (sandbox family only)
     local gamemode = gmod.GetGamemode()
@@ -463,6 +463,9 @@ hook.Add("InitPostEntity", "sev_init", function()
         if base.PostInitCallback then
             base.PostInitCallback(true)
         end
+
+        -- Run post base init hook
+        hook.Run(base.id .. "_post_init", base)
 
         -- Print message
         if base.id then
