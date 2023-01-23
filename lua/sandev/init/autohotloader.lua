@@ -1,10 +1,11 @@
 --[[
-    This hotloader allows SandEv to be included without the need for the player to subscribe to it.
+    This hotloader allows SandEv to be included without the need for the player to subscribe to it. Only one instance
+    of SandEv will be executed and a new gma download will only happen if there are workshop updates.
 
-    Only one instance of SandEv will be allowed and the download will only happen if an update is released
-    in the workshop.
+    If you have concerns about how this module works, please ask a programmer to inspect the code. Comments have been
+    added at every step for ease of understanding.
 
-    To use the hotloader, just include these lines in your shared initialization file (e.g. lua/autorun/mystuff.lua):
+    To use this hotloader in your project, just include the following lines in your shared initialization file (e.g. lua/autorun/mystuff.lua):
 
     hook.Add("Initialize", "SEv_init", function()
         if SEv then return end
