@@ -233,9 +233,9 @@ local function HotloadSEv()
     local initFile = "autorun/sev_init.lua"
     local detourCLIncludeOnSingleplayer = true
 
-    -- Detours
+    -- Add temporary detours
 
-    -- AddCSLuaFile detour: helps to debug
+    -- AddCSLuaFile: helps to debug
     AddCSLuaFileOriginal = AddCSLuaFileOriginal or _G.AddCSLuaFile
     function AddCSLuaFile(path)
         if path == nil then
@@ -248,7 +248,7 @@ local function HotloadSEv()
         end
     end
 
-    -- Include detour: helps to debug and workarounds the CLIENT include datapack issue
+    -- Include: helps to debug and workarounds the CLIENT include datapack issue
     includeOriginal = includeOriginal or _G.include
     function include(path)
         if not file.Exists(path, "LUA") or not string.find(path, "([\\/]+)") then
@@ -305,7 +305,7 @@ local function HotloadSEv()
         sev_init()
     end)
 
-    -- Remove detours
+    -- Remove temporary detours
     timer.Simple(1.5, function()
         AddCSLuaFile = AddCSLuaFileOriginal
         include = includeOriginal
@@ -366,56 +366,88 @@ local function DownloadSEv()
     -- Initialize persistent data
     if not sql.TableExists("SEv") then
         sql.Query("CREATE TABLE SEv(key TEXT, value TEXT);")
-        sql.Query("INSERT INTO SEv (key, value) VALUES ('gma_path', '');")
-        sql.Query("INSERT INTO SEv (key, value) VALUES ('version', '');")
+        sql.Query("INSERT INTO SEv (key, value) VALUES ('file', '');")
+        sql.Query("INSERT INTO SEv (key, value) VALUES ('updated', '');")
+        sql.Query("INSERT INTO SEv (key, value) VALUES ('size', '');")
+        sql.Query("INSERT INTO SEv (key, value) VALUES ('tags', '');")
+        sql.Query("INSERT INTO SEv (key, value) VALUES ('title', '');")
+        sql.Query("INSERT INTO SEv (key, value) VALUES ('timeadded', '');")
     end
 
     -- Get the last stored values
-    local version = sql.Query("SELECT value FROM SEv WHERE key = 'version';")[1].value
+    local updated = sql.Query("SELECT value FROM SEv WHERE key = 'updated';")[1].value
 
-    -- Check for GMA updates and download a new version from workshop if needed
+    -- Start SEv GMA download if needed or mount a cached version. The cached version works offline.
     steamworks.FileInfo(SEvWSID, function(result)
-        local path
-
-        if tostring(result.updated) == version then
-            path = sql.Query("SELECT value FROM SEv WHERE key = 'gma_path';")[1].value
-
+        -- If the downloaded info shows the addon didn't update compared to the cached gma or
+        -- if the info download failed but there's a cached gma
+        if result == nil and updated ~= '' or
+           result ~= nil and tostring(result.updated) == updated
+           then
             ShowLog("Using cached version")
-            MountSEv(path)
-        else
+
+            -- Register addon info
+            local addonInfo = {
+                downloaded = true,
+                file = sql.Query("SELECT value FROM SEv WHERE key = 'file';")[1].value,
+                models = 0,
+                mounted = true,
+                size = sql.Query("SELECT value FROM SEv WHERE key = 'size';")[1].value,
+                tags = sql.Query("SELECT value FROM SEv WHERE key = 'tags';")[1].value,
+                timeadded = sql.Query("SELECT value FROM SEv WHERE key = 'timeadded';")[1].value,
+                title = sql.Query("SELECT value FROM SEv WHERE key = 'title';")[1].value,
+                updated = updated,
+                wsid = SEvWSID
+            }
+
+            AddAddonInfo(addonInfo)
+
+            -- Mount SEv
+            MountSEv(addonInfo.file)
+        -- Download a new gma if the info download succeded and it's needed
+        elseif result ~= nil then 
             ShowLog("Downloading new version...")
-            steamworks.DownloadUGC(SEvWSID, function(_path, _file)
-                path = _path
 
-                sql.Query("UPDATE SEv SET value = '" .. result.updated .. "' WHERE key = 'version';")
-                sql.Query("UPDATE SEv SET value = '" .. path .. "' WHERE key = 'gma_path';")
+            steamworks.DownloadUGC(SEvWSID, function(path, _file)
+                -- Save addon info
+                local timeadded = os.time()
 
+                sql.Query("UPDATE SEv SET value = '" .. result.updated .. "' WHERE key = 'updated';")
+                sql.Query("UPDATE SEv SET value = '" .. path .. "' WHERE key = 'file';")
+                sql.Query("UPDATE SEv SET value = '" .. result.size .. "' WHERE key = 'size';")
+                sql.Query("UPDATE SEv SET value = '" .. result.tags .. "' WHERE key = 'tags';")
+                sql.Query("UPDATE SEv SET value = '" .. result.title .. "' WHERE key = 'title';")
+                sql.Query("UPDATE SEv SET value = '" .. timeadded .. "' WHERE key = 'timeadded';")
+
+                -- Register addon info
+                local addonInfo = {
+                    downloaded = true,
+                    file = path,
+                    models = 0,
+                    mounted = true,
+                    size = result.size,
+                    tags = result.tags,
+                    timeadded = timeadded,
+                    title = result.title,
+                    updated = result.updated,
+                    wsid = SEvWSID
+                }
+
+                AddAddonInfo(addonInfo)
+
+                -- Mount SEv
                 MountSEv(path)
             end)
+        else
+            ShowLog("Failed to hotload SandEv due to errors accessing the Workshop.")
         end
-
-        -- Register addon info
-        local addonInfo = {
-            downloaded = true,
-            file = path,
-            models = 0,
-            mounted = true,
-            size = result.size,
-            tags = result.tags,
-            timeadded = os.time(),
-            title = result.title,
-            updated = result.updated,
-            wsid = SEvWSID
-        }
-
-        AddAddonInfo(addonInfo)
     end)
 end
 
 function StartSEvHotload(enableLogging)
     hotloaderLogging = enableLogging
 
-    --Check if SEv is already loaded
+    -- Check if SEv is already loaded
     if SEv then
         ShowLog("SandEv is already executing, ignoring hotload")
         return
