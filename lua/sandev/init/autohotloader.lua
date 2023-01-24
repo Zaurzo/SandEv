@@ -13,7 +13,7 @@
         if SEv then return end
         http.Fetch("https://raw.githubusercontent.com/Xalalau/SandEv/main/lua/sandev/init/autohotloader.lua", function(SEvHotloader)
             RunString(SEvHotloader)
-            StartSEvHotloadSh(false)
+            StartSEvHotload(false)
         end)
     end)
 
@@ -258,7 +258,7 @@ end
     Workaround: On multiplayer the CLIENT Lua files don't fully integrate (due to the datapack not refreshing) and seem to break includes internally, but
                 they get correctly mounted on both realms. Given this situation, I replace all include(path) calls with RunString(file.Read(path, 'Lua'))
                 and end up with fully working addons. These replacements are only necessary in multiplayer, but I also do them in singleplayer to avoid
-                warning messages about datapack inconsistencies. -- Xalalau
+                warning messages about datapack inconsistencies. -- Xala
 ]]
 local function HotloadTools()
     SWEP = baseclass.Get('gmod_tool')
@@ -340,7 +340,7 @@ local function HotloadTools()
     end
 end
 
-local function HotloadSEvSh()
+local function HotloadSEv()
     local detourCLIncludeOnSingleplayer = true
 
     -- Add temporary detours
@@ -434,7 +434,7 @@ local function HotloadSEvSh()
 end
 
 -- Mount a gma file
-local function MountSEvSh(path)
+local function MountSEv(path)
     if path == nil then
         path = "data/" .. sql.Query("SELECT value FROM SEv WHERE key = 'file';")[1].value
     end
@@ -470,7 +470,7 @@ local function MountSEvSh(path)
 
         -- If so, start the hotloading process
         if mountedFiles == #files or retries == 0 then
-            HotloadSEvSh()
+            HotloadSEv()
 
             if SERVER then
                 if game.IsDedicated then
@@ -494,16 +494,18 @@ end
 if CLIENT then
     net.Receive("sev_mount", function()
         if not SEv then
-            MountSEvSh()
+            MountSEv()
         end
     end)
+end
 
-    -- AddCSLua files added by the sandev base loader
-    -- This function is only used on dedicated servers
-    function ReceivedExtraAddCSLua(data)
-        hotloadedExtraAddCSLua = util.JSONToTable(util.Decompress(data))
-        MountSEvSh()
-    end
+-- AddCSLua files added by the sandev base loader
+-- This function is only used on dedicated servers
+function ReceivedExtraAddCSLua(data)
+    if SERVER then return end
+
+    hotloadedExtraAddCSLua = util.JSONToTable(util.Decompress(data))
+    MountSEv()
 end
 
 -- Save SEv gma file to the data folder
@@ -520,11 +522,11 @@ local function SaveSEvGMA(gmaContent)
 end
 
 -- The server received an updated SEv gma from a client
-function ReceivedSEvGMASv(gmaContent)
+function ReceivedSEvGMA(gmaContent)
     if CLIENT then return end
 
     SaveSEvGMA(gmaContent)
-    MountSEvSh()
+    MountSEv()
 end
 
 -- Initialize persistent SandEv data
@@ -560,7 +562,7 @@ if CLIENT then
             gmaCopy:Close()
 
             timer.Simple(0.2, function()
-                SendData("sandev_gma", gmaContent, "ReceivedSEvGMASv", nil)
+                SendData("sandev_gma", gmaContent, "ReceivedSEvGMA", nil)
             end)
         end
     end)
@@ -583,7 +585,7 @@ if SERVER then
             net.Start("sev_request_gma")
             net.Send(ply)
         else
-            MountSEvSh()
+            MountSEv()
         end
     end)
 end
@@ -591,7 +593,7 @@ end
 -- It's only possible to download workshop addons on clients, so we need to
 -- send the gma information and contents to the server when there's a dedicated
 -- server executing and the cached gma is outdated.
-local function DownloadSEvCl()
+local function DownloadSEv()
     if SERVER then return end
 
     ShowLog("SandEv Auto Hotloader is starting...")
@@ -671,7 +673,7 @@ local function DownloadSEvCl()
     end)
 end
 
-function StartSEvHotloadSh(enableLogging)
+function StartSEvHotload(enableLogging)
     hotloaderLogging = enableLogging
 
     -- Check if SEv is already loaded
@@ -685,6 +687,6 @@ function StartSEvHotloadSh(enableLogging)
         util.AddNetworkString("sev_send_addon_info")
         util.AddNetworkString("sev_request_gma")
     else
-        DownloadSEvCl()
+        DownloadSEv()
     end
 end
