@@ -525,8 +525,7 @@ function ReceivedSEvGMA(gmaContent)
 
     SHL:SaveSEvGMA(gmaContent)
 
-    net.Start("sev_request_mount_on_cl")
-    net.SendToServer()
+    SHL:MountSEv()
 end
 
 -- Save SEv gma file to the data folder
