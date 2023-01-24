@@ -602,10 +602,10 @@ local function DownloadSEvCl()
     -- Get the last stored values
     local updated = sql.Query("SELECT value FROM SEv WHERE key = 'updated';")[1].value
 
-    -- Start SEv GMA download if needed or mount a cached version. The cached version works offline.
+    -- Start SEv GMA download if needed or mount a cached version.
+    -- The cached version works offline.
     steamworks.FileInfo(SEvWSID, function(result)
-        -- If the downloaded info shows the addon didn't update compared to the cached gma or
-        -- if the info download failed but there's a cached gma
+        -- If the downloaded info shows the cached gma is updated or if the info download failed but there's a cached gma
         if result == nil and updated ~= '' or
            result ~= nil and tostring(result.updated) == updated
            then
@@ -631,7 +631,7 @@ local function DownloadSEvCl()
             net.Start("sev_send_addon_info")
             net.WriteTable(addonInfo)
             net.SendToServer()
-        -- Download a new gma if the info download succeded and it's needed
+        -- Download a new gma if it's needed and the info download succeded
         elseif result ~= nil then 
             ShowLog("Downloading new version...")
 
