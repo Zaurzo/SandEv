@@ -7,7 +7,7 @@ function SEv.Net:SendString(str, callbackName, ply)
 end
 
 -- Send huge binary
-local function SendData(chunksID, data, callbackName, toPly, isCompressedString)
+function SEv.Net:SendData(chunksID, data, callbackName, toPly, isCompressedString)
     local chunksSubID = SysTime()
 
     local totalSize = string.len(data)
@@ -43,10 +43,14 @@ local function SendData(chunksID, data, callbackName, toPly, isCompressedString)
             else
                 net.WriteString("")
             end
-            if ply then
-                net.Send(ply)
+            if SERVER then
+                if toPly then
+                    net.Send(toPly)
+                else
+                    net.Broadcast()
+                end
             else
-                net.Broadcast()
+                net.SendToServer()
             end
 
             if isLastChunk then
