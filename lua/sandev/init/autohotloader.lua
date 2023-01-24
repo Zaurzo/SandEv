@@ -1,9 +1,11 @@
 --[[
     This hotloader allows SandEv to be included without the need for the player to subscribe to it. Only one instance
-    of SandEv will be executed and a new gma download will only happen if there are workshop updates.
+    of SandEv will be executed and a new gma will be downloaded if there are workshop updates.
+
+    Singleplayer, listen servers and dedicated servers are supported.
 
     If you have concerns about how this module works, please ask a programmer to inspect the code. Comments have been
-    added at every step for ease of understanding.
+    added at most steps for ease of understanding.
 
     To use this hotloader in your project, just include the following lines in your shared initialization file (e.g. lua/autorun/mystuff.lua):
 
