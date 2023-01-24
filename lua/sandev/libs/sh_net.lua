@@ -7,13 +7,12 @@ function SEv.Net:SendString(str, callbackName, ply)
 end
 
 -- Send huge binary
-function SEv.Net:SendData(chunksID, data, callbackName, ply, isCompressedString)
+local function SendData(chunksID, data, callbackName, toPly, isCompressedString)
     local chunksSubID = SysTime()
 
     local totalSize = string.len(data)
-    local chunkSize = 64000 -- 64KB (Max value: 64KB. Min value: 11KB (so we get a min 0.1s delay on 1MBps cap speed))
+    local chunkSize = 64000 -- ~64KB max
     local totalChunks = math.ceil(totalSize / chunkSize)
-    local maxSpeed = chunkSize / 1000 / 1024 -- 1 MBps
 
     -- 3 minutes to remove possible memory leaks
     SEv.Net.sendTab[chunksID] = chunksSubID
@@ -27,7 +26,7 @@ function SEv.Net:SendData(chunksID, data, callbackName, ply, isCompressedString)
         local endByte = remaining < chunkSize and (startByte - 1) + remaining or chunkSize * i
         local chunk = string.sub(data, startByte, endByte)
 
-        timer.Simple(i * maxSpeed, function()
+        timer.Simple(i * 0.1, function()
             if SEv.Net.sendTab[chunksID] ~= chunksSubID then return end
 
             local isLastChunk = i == totalChunks
@@ -62,9 +61,9 @@ net.Receive("sev_net_send_string", function()
     local chunksSubID = net.ReadUInt(32)
     local len = net.ReadUInt(16)
     local chunk = net.ReadData(len)
-    local isLastPart = net.ReadBool()
+    local isLastChunk = net.ReadBool()
     local isCompressedString = net.ReadBool()
-    local callbackName = net.ReadString() -- Empty until isLastPart is true.
+    local callbackName = net.ReadString() -- Empty until isLastChunk is true.
 
     -- Initialize streams or reset overwriten ones
     if not SEv.Net.receivedTab[chunksID] or SEv.Net.receivedTab[chunksID].chunksSubID ~= chunksSubID then
@@ -83,7 +82,7 @@ net.Receive("sev_net_send_string", function()
     SEv.Net.receivedTab[chunksID].data = SEv.Net.receivedTab[chunksID].data .. chunk
 
     -- Finish stream
-    if isLastPart then
+    if isLastChunk then
         local data = SEv.Net.receivedTab[chunksID].data
 
         if isCompressedString then
