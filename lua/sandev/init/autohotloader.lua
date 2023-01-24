@@ -121,17 +121,28 @@ end)
 -- The hotloader
 -- ------------------------------------------------------------------------
 
+if SERVER then
+    util.AddNetworkString("sev_mount")
+    util.AddNetworkString("sev_send_addon_info_to_sv")
+    util.AddNetworkString("sev_get_addon_info_from_sv")
+    util.AddNetworkString("sev_send_addon_info_to_cl")
+    util.AddNetworkString("sev_request_gma")
+    util.AddNetworkString("sev_request_mount_on_cl")
+end
+
+local SHL = {} -- SandEv Hotloader
+
 local hotloaderLogging
+local isSEvMounted = false
 local hotloaderAddonInfo = {}
 local hotloadedExtraAddCSLua = {} -- Used on dedicated servers only
-local isSEvMounted = false
 
 -- SEv info
 local SEVInitFile = "autorun/sev_init.lua"
 local SEVGMA = "sandev.dat" -- Data folder
 local SEvWSID = "2908040257"
 
-local function ShowLog(log)
+function SHL:ShowLog(log)
     if hotloaderLogging then
         print("[SEvLoader] " .. log)
     end
@@ -150,27 +161,12 @@ function engine.GetAddons()
     return mountedAddons
 end
 
-if SERVER then
-    util.AddNetworkString("sev_hotloader_add_addon_info")
-
-    net.Receive("sev_hotloader_add_addon_info", function(len, ply)
-        local addonInfo = net.ReadTable()
-        table.insert(hotloaderAddonInfo, addonInfo)
-    end)
-end
-
-local function AddAddonInfo(addonInfo)
-    if SERVER then return end
-
+function SHL:AddAddonInfo(addonInfo)
     table.insert(hotloaderAddonInfo, addonInfo)
-
-    net.Start("sev_hotloader_add_addon_info")
-    net.WriteTable(addonInfo)
-    net.SendToServer()
 end
 
 -- Load an entity
-local function HotloadEntity(_type, objName, entBase, entClass, filename)
+function SHL:HotloadEntity(_type, objName, entBase, entClass, filename)
     _G[objName] = {}
     _G[objName].Folder = _type .. "/" .. entClass
 
@@ -205,7 +201,7 @@ local function HotloadEntity(_type, objName, entBase, entClass, filename)
     end
 
     if filesIncluded then
-        ShowLog("[Register entity] " .. entClass)
+        SHL:ShowLog("[Register entity] " .. entClass)
 
         entBase.Register(ENT, entClass)
         baseclass.Set(entClass, ENT)
@@ -215,7 +211,7 @@ local function HotloadEntity(_type, objName, entBase, entClass, filename)
 end
 
 -- Load new sents and sweps
-local function HotloadEntities(_type, objName, entBase)
+function SHL:HotloadEntities(_type, objName, entBase)
     local files, dirs = file.Find(_type .. "/*", "LUA")
 
     -- Check for unregistered entities
@@ -226,7 +222,7 @@ local function HotloadEntities(_type, objName, entBase)
 
         -- Register new entities
         if not entBase.GetStored(entClass) then
-            HotloadEntity(_type, objName, entBase, entClass, filename)
+            SHL:HotloadEntity(_type, objName, entBase, entClass, filename)
         end
     end
 
@@ -237,7 +233,7 @@ local function HotloadEntities(_type, objName, entBase)
             if file.Exists(_type .. "/" .. entClass .. "/init.lua", "LUA") or 
                 file.Exists(_type .. "/" .. entClass .. "/cl_init.lua", "LUA")
                 then
-                HotloadEntity(_type, objName, entBase, entClass, filename)
+                SHL:HotloadEntity(_type, objName, entBase, entClass, filename)
             end
         end
     end
@@ -260,7 +256,7 @@ end
                 and end up with fully working addons. These replacements are only necessary in multiplayer, but I also do them in singleplayer to avoid
                 warning messages about datapack inconsistencies. -- Xala
 ]]
-local function HotloadTools()
+function SHL:HotloadTools()
     SWEP = baseclass.Get('gmod_tool')
     toolObj = getmetatable(SWEP.Tool["axis"])
 
@@ -273,7 +269,7 @@ local function HotloadTools()
 
         -- Register new tools
         if not SWEP.Tool[toolMode] then
-            ShowLog("[Register tool] " .. toolMode)
+            SHL:ShowLog("[Register tool] " .. toolMode)
 
             foundToolsToMount = true
 
@@ -340,7 +336,7 @@ local function HotloadTools()
     end
 end
 
-local function HotloadSEv()
+function SHL:HotloadSEv()
     local detourCLIncludeOnSingleplayer = true
 
     -- Add temporary detours
@@ -355,7 +351,7 @@ local function HotloadSEv()
         end
 
         if file.Exists(path, "LUA") then
-            ShowLog("[AddCSLuaFile] " .. path)
+            SHL:ShowLog("[AddCSLuaFile] " .. path)
             AddCSLuaFileOriginal(path)
 
             if game.IsDedicated and not string.find(path, "sandev") and not string.find(path, "sev_") then
@@ -382,17 +378,17 @@ local function HotloadSEv()
             local fileContent = file.Read(path, 'LUA')
 
             if fileContent then
-                ShowLog("[include cl hack] " .. path)
+                SHL:ShowLog("[include cl hack] " .. path)
                 RunString(fileContent, path)
             elseif hotloadedExtraAddCSLua[path] then
-                ShowLog("[include cl hack on dedicated server] " .. path)
+                SHL:ShowLog("[include cl hack on dedicated server] " .. path)
                 fileContent = hotloadedExtraAddCSLua[path]
                 RunString(fileContent, path)
             else
-                ShowLog("[include cl hack] FAILED TO INCLUDE " .. path)
+                SHL:ShowLog("[include cl hack] FAILED TO INCLUDE " .. path)
             end
         else
-            ShowLog("[include] " .. path)
+            SHL:ShowLog("[include] " .. path)
             includeOriginal(path)
         end
     end
@@ -404,19 +400,19 @@ local function HotloadSEv()
     include(SEVInitFile)
 
     -- Load new scripted weapons
-    HotloadEntities("weapons", "SWEP", weapons)
+    SHL:HotloadEntities("weapons", "SWEP", weapons)
 
     -- Load new tools
-    HotloadTools()
+    SHL:HotloadTools()
 
     -- Load new scripted entities
-    HotloadEntities("entities", "ENT", scripted_ents)
+    SHL:HotloadEntities("entities", "ENT", scripted_ents)
 
     -- At this point SandEv is fully mounted
     isSEvMounted = true
 
     -- Start SandEv
-    timer.Simple(0.2, function()
+    timer.Simple(0.6, function()
         if CLIENT then
             local sev_portal_init = hook.GetTable()["InitPostEntity"]["sev_portal_init"]
             sev_portal_init()
@@ -433,8 +429,32 @@ local function HotloadSEv()
     end)
 end
 
+-- The client has to ask the server if SEv can be mounted
+function SHL:RequestMountSEvOnCl(ply)
+    if CLIENT then return end
+
+    if game.IsDedicated then
+        timer.Simple(0.9, function()
+            local compressedString = util.Compress(util.TableToJSON(hotloadedExtraAddCSLua))
+            SendData("sandev_addcslua_extra_dedicated", compressedString, "ReceivedExtraAddCSLua", nil)
+        end)
+    elseif ply then
+        net.Start("sev_mount")
+        net.Send(ply)
+    else
+        net.Start("sev_mount")
+        net.Broadcast()
+    end
+end
+
+if SERVER then
+    net.Receive("sev_request_mount_on_cl", function(len, ply)
+        SHL:RequestMountSEvOnCl(ply)
+    end)
+end
+
 -- Mount a gma file
-local function MountSEv(path)
+function SHL:MountSEv(path)
     if path == nil then
         path = "data/" .. sql.Query("SELECT value FROM SEv WHERE key = 'file';")[1].value
     end
@@ -443,9 +463,7 @@ local function MountSEv(path)
     -- to mount it on new players (The "sev_mount" net ignores players with
     -- a mounted SandEv)
     if SERVER and SEv then
-        net.Start("sev_mount")
-        net.Broadcast()
-
+        SHL:RequestMountSEvOnCl()
         return
     end
 
@@ -463,25 +481,17 @@ local function MountSEv(path)
     timer.Create(path, 0.3, 0, function()
         for k, _file in ipairs(files) do
             if file.Exists(_file, "GAME") then
-                ShowLog("[file.Exists]: " .. _file)
+                SHL:ShowLog("[file.Exists]: " .. _file)
                 mountedFiles = mountedFiles + 1
             end
         end
 
         -- If so, start the hotloading process
         if mountedFiles == #files or retries == 0 then
-            HotloadSEv()
+            SHL:HotloadSEv()
 
             if SERVER then
-                if game.IsDedicated then
-                    timer.Simple(0.5, function()
-                        local compressedString = util.Compress(util.TableToJSON(hotloadedExtraAddCSLua))
-                        SendData("sandev_addcslua_extra_dedicated", compressedString, "ReceivedExtraAddCSLua", nil)
-                    end)
-                else
-                    net.Start("sev_mount")
-                    net.Broadcast()
-                end
+                SHL:RequestMountSEvOnCl()
             end
 
             timer.Remove(path)
@@ -494,22 +504,33 @@ end
 if CLIENT then
     net.Receive("sev_mount", function()
         if not SEv then
-            MountSEv()
+            SHL:MountSEv()
         end
     end)
 end
 
--- AddCSLua files added by the sandev base loader
+-- AddCSLua for files added by the SandEv bases system
 -- This function is only used on dedicated servers
+-- DO NOT call this function directly!! It must be used only as a callback for the SendData function
 function ReceivedExtraAddCSLua(data)
     if SERVER then return end
 
     hotloadedExtraAddCSLua = util.JSONToTable(util.Decompress(data))
-    MountSEv()
+    SHL:MountSEv()
+end
+
+-- The server received an updated SEv gma from a client
+function ReceivedSEvGMA(gmaContent)
+    if CLIENT then return end
+
+    SHL:SaveSEvGMA(gmaContent)
+
+    net.Start("sev_request_mount_on_cl")
+    net.SendToServer()
 end
 
 -- Save SEv gma file to the data folder
-local function SaveSEvGMA(gmaContent)
+function SHL:SaveSEvGMA(gmaContent)
     local gmaCopy = file.Open(SEVGMA, "wb", "DATA")
 
     if not gmaCopy then
@@ -521,20 +542,12 @@ local function SaveSEvGMA(gmaContent)
     gmaCopy:Close()
 end
 
--- The server received an updated SEv gma from a client
-function ReceivedSEvGMA(gmaContent)
-    if CLIENT then return end
-
-    SaveSEvGMA(gmaContent)
-    MountSEv()
-end
-
 -- Initialize persistent SandEv data
-local function InitSEvSQL()
+function SHL:InitSEvSQL()
     if not sql.TableExists("SEv") then
         sql.Query("CREATE TABLE SEv(key TEXT, value TEXT);")
         sql.Query("INSERT INTO SEv (key, value) VALUES ('file', '');")
-        sql.Query("INSERT INTO SEv (key, value) VALUES ('updated', '');")
+        sql.Query("INSERT INTO SEv (key, value) VALUES ('updated', '0');")
         sql.Query("INSERT INTO SEv (key, value) VALUES ('size', '');")
         sql.Query("INSERT INTO SEv (key, value) VALUES ('tags', '');")
         sql.Query("INSERT INTO SEv (key, value) VALUES ('title', '');")
@@ -543,7 +556,7 @@ local function InitSEvSQL()
 end
 
 -- Update persistent SandEv data
-local function UpdatedSEvSQL(addonInfo)
+function SHL:UpdatedSEvSQL(addonInfo)
     sql.Query("UPDATE SEv SET value = '" .. addonInfo.updated .. "' WHERE key = 'updated';")
     sql.Query("UPDATE SEv SET value = '" .. addonInfo.file .. "' WHERE key = 'file';")
     sql.Query("UPDATE SEv SET value = '" .. addonInfo.size .. "' WHERE key = 'size';")
@@ -552,54 +565,165 @@ local function UpdatedSEvSQL(addonInfo)
     sql.Query("UPDATE SEv SET value = '" .. addonInfo.timeadded .. "' WHERE key = 'timeadded';")
 end
 
--- Send a updated SEv gma to the server if requested
-if CLIENT then
-    net.Receive("sev_request_gma", function()
-        local gmaCopy = file.Open(SEVGMA, "rb", "DATA")
-
-        if gmaCopy then
-            local gmaContent = gmaCopy:Read(gmaCopy:Size())
-            gmaCopy:Close()
-
-            timer.Simple(0.2, function()
-                SendData("sandev_gma", gmaContent, "ReceivedSEvGMA", nil)
-            end)
-        end
-    end)
+-- Get the addonInfo from the persistent SandEv data
+function SHL:GetAddonInfoFromSQL()
+    return {
+        downloaded = true,
+        file = sql.Query("SELECT value FROM SEv WHERE key = 'file';")[1].value,
+        models = 0,
+        mounted = true,
+        size = sql.Query("SELECT value FROM SEv WHERE key = 'size';")[1].value,
+        tags = sql.Query("SELECT value FROM SEv WHERE key = 'tags';")[1].value,
+        timeadded = sql.Query("SELECT value FROM SEv WHERE key = 'timeadded';")[1].value,
+        title = sql.Query("SELECT value FROM SEv WHERE key = 'title';")[1].value,
+        updated = tonumber(sql.Query("SELECT value FROM SEv WHERE key = 'updated';")[1].value),
+        wsid = SEvWSID
+    }
 end
+
+-- Send a updated SEv gma to the server if requested
+net.Receive("sev_request_gma", function()
+    local gmaCopy = file.Open(SEVGMA, "rb", "DATA")
+    local callbackName = net.ReadString()
+
+    if gmaCopy then
+        local gmaContent = gmaCopy:Read(gmaCopy:Size())
+        gmaCopy:Close()
+
+        timer.Simple(0.2, function()
+            SendData("sandev_gma", gmaContent, callbackName, nil)
+        end)
+    end
+end)
 
 -- Check if the server cached SEv exists and is updated
 -- Request a updated gma otherwise
 if SERVER then
-    net.Receive("sev_send_addon_info", function(len, ply)
-        InitSEvSQL()
-
+    net.Receive("sev_send_addon_info_to_sv", function(len, ply)
         local addonInfo = net.ReadTable()
         local updated = sql.Query("SELECT value FROM SEv WHERE key = 'updated';")[1].value
 
-        if updated == '' or tostring(addonInfo.updated) ~= updated then
-            UpdatedSEvSQL(addonInfo)
+        if not SEv then
+            SHL:UpdatedSEvSQL(addonInfo)
+            SHL:AddAddonInfo(addonInfo)
+        end
 
-            AddAddonInfo(addonInfo)
-
+        if not SEv and addonInfo.updated > tonumber(updated) then
             net.Start("sev_request_gma")
+            net.WriteString("ReceivedSEvGMA")
             net.Send(ply)
         else
-            MountSEv()
+            SHL:MountSEv()
         end
     end)
+
+    net.Receive("sev_get_addon_info_from_sv", function(len, ply)
+        local addonInfo = SHL:GetAddonInfoFromSQL()
+
+        net.Start("sev_send_addon_info_to_cl")
+        net.WriteTable(addonInfo)
+        net.WriteBool(isSEvMounted)
+        net.Send(ply)
+    end)
+end
+
+-- Download the SEv version beign used by the server
+function SHL:DownloadSEvFromServer(SVAddonInfo)
+    if SERVER then return end
+
+    SHL:ShowLog("Downloading gma from server...")
+
+    -- Register addon info
+    SHL:AddAddonInfo(SVAddonInfo)
+
+    -- Save addon info
+    SHL:UpdatedSEvSQL(SVAddonInfo)
+
+    -- Request SEv
+    net.Start("sev_request_gma")
+    net.WriteString("DownloadedSEvFromServer")
+    net.SendToServer()
+end
+
+-- Load the SEv downloaded from the server
+function DownloadedSEvFromServer(gmaContent)
+    if SERVER then return end
+
+    -- Save gma content
+    SHL:SaveSEvGMA(gmaContent)
+
+    -- Mount SEv
+    net.Start("sev_request_mount_on_cl")
+    net.SendToServer()
+end
+
+-- Download the latest SEv from the workshop
+function SHL:DownloadSEvFromWorkshop(result)
+    if SERVER then return end
+
+    SHL:ShowLog("Downloading gma from workshop...")
+
+    steamworks.DownloadUGC(SEvWSID, function(path, _file)
+        -- Save gma content
+        local gmaContent = _file:Read(_file:Size())
+        SHL:SaveSEvGMA(gmaContent)
+
+        -- Register addon info
+        local timeadded = os.time()
+        local addonInfo = {
+            downloaded = true,
+            file = SEVGMA,
+            models = 0,
+            mounted = true,
+            size = result.size,
+            tags = result.tags,
+            timeadded = timeadded,
+            title = result.title,
+            updated = result.updated,
+            wsid = SEvWSID
+        }
+
+        SHL:AddAddonInfo(addonInfo)
+
+        -- Save addon info
+        SHL:UpdatedSEvSQL(addonInfo)
+
+        -- Mount SEv
+        net.Start("sev_send_addon_info_to_sv")
+        net.WriteTable(addonInfo)
+        net.SendToServer()
+    end)
+end
+
+-- Use the local client cached SEv
+function SHL:LoadCachedSEv(isMountedOnServer)
+    if SERVER then return end
+
+    SHL:ShowLog("Using cached gma")
+
+    -- Register addon info
+    local addonInfo = SHL:GetAddonInfoFromSQL()
+
+    SHL:AddAddonInfo(addonInfo)
+
+    -- Mount SEv
+    if isMountedOnServer then
+        net.Start("sev_request_mount_on_cl")
+        net.SendToServer()
+    else
+        net.Start("sev_send_addon_info_to_sv")
+        net.WriteTable(addonInfo)
+        net.SendToServer()    
+    end
 end
 
 -- It's only possible to download workshop addons on clients, so we need to
 -- send the gma information and contents to the server when there's a dedicated
 -- server executing and the cached gma is outdated.
-local function DownloadSEv()
+function SHL:DownloadSEv(SVAddonInfo, isMountedOnSv)
     if SERVER then return end
 
-    ShowLog("SandEv Auto Hotloader is starting...")
-
-    -- Initialize persistent data
-    InitSEvSQL()
+    SHL:ShowLog("SandEv Auto Hotloader is starting...")
 
     -- Get the last stored values
     local updated = sql.Query("SELECT value FROM SEv WHERE key = 'updated';")[1].value
@@ -607,68 +731,23 @@ local function DownloadSEv()
     -- Start SEv GMA download if needed or mount a cached version.
     -- The cached version works offline.
     steamworks.FileInfo(SEvWSID, function(result)
-        -- If the downloaded info shows the cached gma is updated or if the info download failed but there's a cached gma
-        if result == nil and updated ~= '' or
-           result ~= nil and tostring(result.updated) == updated
-           then
-            ShowLog("Using cached version")
-
-            -- Register addon info
-            local addonInfo = {
-                downloaded = true,
-                file = sql.Query("SELECT value FROM SEv WHERE key = 'file';")[1].value,
-                models = 0,
-                mounted = true,
-                size = sql.Query("SELECT value FROM SEv WHERE key = 'size';")[1].value,
-                tags = sql.Query("SELECT value FROM SEv WHERE key = 'tags';")[1].value,
-                timeadded = sql.Query("SELECT value FROM SEv WHERE key = 'timeadded';")[1].value,
-                title = sql.Query("SELECT value FROM SEv WHERE key = 'title';")[1].value,
-                updated = updated,
-                wsid = SEvWSID
-            }
-
-            AddAddonInfo(addonInfo)
-
-            -- Mount SEv
-            net.Start("sev_send_addon_info")
-            net.WriteTable(addonInfo)
-            net.SendToServer()
-        -- Download a new gma if it's needed and the info download succeded
-        elseif result ~= nil then 
-            ShowLog("Downloading new version...")
-
-            steamworks.DownloadUGC(SEvWSID, function(path, _file)
-                -- Save gma content
-                local gmaContent = _file:Read(_file:Size())
-                SaveSEvGMA(gmaContent)
-
-                -- Register addon info
-                local timeadded = os.time()
-                local addonInfo = {
-                    downloaded = true,
-                    file = SEVGMA,
-                    models = 0,
-                    mounted = true,
-                    size = result.size,
-                    tags = result.tags,
-                    timeadded = timeadded,
-                    title = result.title,
-                    updated = result.updated,
-                    wsid = SEvWSID
-                }
-
-                AddAddonInfo(addonInfo)
-
-                -- Save addon info
-                UpdatedSEvSQL(addonInfo)
-
-                -- Mount SEv
-                net.Start("sev_send_addon_info")
-                net.WriteTable(addonInfo)
-                net.SendToServer()
-            end)
+        -- The server has a SEv gma initialized
+        if isMountedOnSv and SVAddonInfo and next(SVAddonInfo) then
+            -- Get the server gma if the local one differs
+            if updated ~= SVAddonInfo.updated then
+                SHL:DownloadSEvFromServer(SVAddonInfo)
+            -- Load the local gma if the it's the same
+            else
+                SHL:LoadCachedSEv(isMountedOnSv)
+            end
+        -- The server doesn't have SEv initialized and the client needs to download a new version
+        elseif result ~= nil and (updated == '0' or result.updated > tonumber(updated)) then
+            SHL:DownloadSEvFromWorkshop(result)
+        -- The server doesn't have SEv initialized and the client has an usable cached version
+        elseif updated ~= '0' then
+            SHL:LoadCachedSEv(isMountedOnSv)
         else
-            ShowLog("Failed to hotload SandEv due to errors accessing the Workshop.")
+            SHL:ShowLog("Failed to hotload SandEv due to errors accessing the Workshop.")
         end
     end)
 end
@@ -678,15 +757,34 @@ function StartSEvHotload(enableLogging)
 
     -- Check if SEv is already loaded
     if SEv then
-        ShowLog("SandEv is already executing, ignoring hotload")
+        SHL:ShowLog("SandEv is already executing, ignoring hotload")
         return
     end
 
-    if SERVER then
-        util.AddNetworkString("sev_mount")
-        util.AddNetworkString("sev_send_addon_info")
-        util.AddNetworkString("sev_request_gma")
-    else
-        DownloadSEv()
+    -- Initialize persistent data
+    SHL:InitSEvSQL()
+
+    -- Set net names
+
+    -- Get the server state and start the hotload
+    if CLIENT then
+        timer.Simple(0, function()
+            net.Start("sev_get_addon_info_from_sv")
+            net.SendToServer()
+        end)
+
+        net.Receive("sev_send_addon_info_to_cl", function(len, ply)
+            local SVAddonInfo = net.ReadTable()
+            local isMountedOnSv = net.ReadBool()
+
+            SHL:DownloadSEv(SVAddonInfo, isMountedOnSv)
+        end)
     end
+end
+
+-- Restore addon info and state after a map changelevel
+if SEv then
+    local addonInfo = SHL:GetAddonInfoFromSQL()
+    SHL:AddAddonInfo(addonInfo)
+    isSEvMounted = true
 end
