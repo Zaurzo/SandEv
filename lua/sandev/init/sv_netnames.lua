@@ -60,3 +60,6 @@ function SEv:AddBaseNets(base)
     -- DevMode
     util.AddNetworkString(base.id .. "_toggle_devmode")
 end
+
+-- SEv Devmode
+util.AddNetworkString(SEv.id .. "_toggle_devmode")

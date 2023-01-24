@@ -356,7 +356,7 @@ hook.Add("InitPostEntity", "sev_init", function()
 
         -- Set devmode
         if SEv.devMode then
-            base:EnableDevMode()
+            SEv:EnableDevMode()
         end
 
         -- Run last initializations
