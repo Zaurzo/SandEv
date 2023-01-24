@@ -1,13 +1,8 @@
 --[[
-    This hotloader allows SandEv to be included without the need for the player to subscribe to it. Only one instance
-    of SandEv will be executed and a new gma will be downloaded if there are workshop updates.
+    This hotloader allows SandEv (or SEv) to be executed without the need for the player to subscribe to it.
 
-    Singleplayer, listen servers and dedicated servers are supported.
+    To use it in your project, just include the following lines in your shared initialization file (e.g. lua/autorun/mystuff.lua):
 
-    If you have concerns about how this module works, please ask a programmer to inspect the code. Comments have been
-    added at most steps for ease of understanding.
-
-    To use this hotloader in your project, just include the following lines in your shared initialization file (e.g. lua/autorun/mystuff.lua):
 
     hook.Add("Initialize", "SEv_init", function()
         if SEv then return end
@@ -16,6 +11,32 @@
             StartSEvHotload(false)
         end)
     end)
+
+
+    Only one instance of SandEv will be executed no matter how many times this StartSEvHotload() is called and
+    the gma loading process will be done as follows:
+
+    1) SEv is running on the server
+        1.1) The client has no gma or the client has a different gma
+            -- Download SEv gma from the server
+            -- Mount on the client
+        1.2) The client has the same gma
+            -- Mount on the client
+    2) SEv is not running on the server
+        2.1) The client has no gma or the client gma is outdated
+            -- Download gma from the workshop
+            -- Send gma to the server if the server has no gma or if its gma is outdated
+            -- Mount SEv on the server
+            -- Mount SEv on the client
+        2.2) The client has the same gma
+            -- Mount SEv on the server
+            -- Mount SEv on the client
+
+    Singleplayer and listen or dedicated servers are supported. The code handles changelevels, new players joining the game and
+    players returning to the game right after disconnecting.
+
+    If you have concerns about how this module works, please ask a programmer to inspect it. Comments have been
+    added at most steps for ease of understanding. Notify me immediately if any exploits are discovered.
 
     Thank you,
     - Xalalau Xubilozo
