@@ -17,7 +17,7 @@ function SEv:AddDevModeToBase(base)
 
             CreateClientConVar(base.id .. "_events_show_names", "0", true, false)
             CreateClientConVar(base.id .. "_events_render_auto", "0", true, false)
-            SEv.Portals.VarDrawDistance = CreateClientConVar(base.id .. "_portal_drawdistance", "3500", true, false, "Sets the size of the portal along the Y axis", 0)
+            SEvPortals.VarDrawDistance = CreateClientConVar(base.id .. "_portal_drawdistance", "3500", true, false, "Sets the size of the portal along the Y axis", 0)
 
             concommand.Add(base.id .. "_events_render", function(ply, cmd, args) base.Event:ToggleRender(ply, cmd, args) end)
             concommand.Add(base.id .. "_events_render_list", function() base.Event:ListRender() end)

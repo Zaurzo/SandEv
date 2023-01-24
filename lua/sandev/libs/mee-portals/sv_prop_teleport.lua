@@ -50,7 +50,7 @@ local function seamless_check(e)
 end
 
 hook.Add("Tick", "sev_portal_teleport", function()
-    if not SEv.Portals or SEv.Portals.portalIndex < 1 or not allEnts then return end
+    if not SEvPortals or SEvPortals.portalIndex < 1 or not allEnts then return end
 
     for k, prop in ipairs(allEnts) do
         if not prop:IsValid() then continue end
@@ -82,8 +82,8 @@ hook.Add("Tick", "sev_portal_teleport", function()
         if hitPortalExit and hitPortalExit:IsValid() and obbMax[1] < hitPortal:GetExitSize()[1] * 45 and obbMax[2] < hitPortal:GetExitSize()[2] * 45 and prop:GetVelocity():Dot(hitPortal:GetUp()) < -0.5 then
             local constrained = constraint.GetAllConstrainedEntities(prop)
             for k, constrainedProp in pairs(constrained) do
-                local editedPos, editedPropAng = SEv.Portals.TransformPortal(hitPortal, hitPortalExit, constrainedProp:GetPos(), constrainedProp:GetAngles())
-                local _, editedVel = SEv.Portals.TransformPortal(hitPortal, hitPortalExit, nil, constrainedProp:GetVelocity():Angle())
+                local editedPos, editedPropAng = SEvPortals.TransformPortal(hitPortal, hitPortalExit, constrainedProp:GetPos(), constrainedProp:GetAngles())
+                local _, editedVel = SEvPortals.TransformPortal(hitPortal, hitPortalExit, nil, constrainedProp:GetVelocity():Angle())
                 local max = math.Max(constrainedProp:GetVelocity():Length(), hitPortalExit:GetUp():Dot(-physenv.GetGravity() / 3))
 
                 constrainedProp:ForcePlayerDrop()

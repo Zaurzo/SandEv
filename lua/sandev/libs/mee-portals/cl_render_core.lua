@@ -23,7 +23,7 @@ local renderViewTable = {
 
 -- sort the portals by distance since draw functions do not obey the z buffer
 timer.Create("sev_portal_distance_fix", 0.25, 0, function()
-    if not SEv.Portals or SEv.Portals.portalIndex < 1 then return end
+    if not SEvPortals or SEvPortals.portalIndex < 1 then return end
 
     portals = ents.FindByClass("sev_portal")
     table.sort(portals, function(a, b) 
@@ -47,9 +47,9 @@ end)
 -- update the rendertarget here since we cant do it in postdraw (cuz of infinite recursion)
 local physgun_halo = GetConVar("physgun_halo")
 hook.Add("RenderScene", "sev_portals_draw", function(eyePos, eyeAngles, fov)
-    if not SEv.Portals or SEv.Portals.portalIndex < 1 then return end
-    if not SEv.Portals.PortalRTs then return end
-    SEv.Portals.Rendering = true
+    if not SEvPortals or SEvPortals.portalIndex < 1 then return end
+    if not SEvPortals.PortalRTs then return end
+    SEvPortals.Rendering = true
 
     -- black halo clipping plane fix (Thanks to homonovus)
     physgun_halo = physgun_halo or GetConVar("physgun_halo")
@@ -58,12 +58,12 @@ hook.Add("RenderScene", "sev_portals_draw", function(eyePos, eyeAngles, fov)
     physgun_halo:SetInt(0)
 
     for k, v in ipairs(portals) do
-        if timesRendered >= SEv.Portals.MaxRTs then break end
+        if timesRendered >= SEvPortals.MaxRTs then break end
         if not v:IsValid() or not v:GetExitPortal():IsValid() then continue end
 
-        if timesRendered < SEv.Portals.MaxRTs and SEv.Portals.ShouldRender(v, eyePos, eyeAngles) then
+        if timesRendered < SEvPortals.MaxRTs and SEvPortals.ShouldRender(v, eyePos, eyeAngles) then
             local exitPortal = v:GetExitPortal()
-            local editedPos, editedAng = SEv.Portals.TransformPortal(v, exitPortal, eyePos, eyeAngles)
+            local editedPos, editedAng = SEvPortals.TransformPortal(v, exitPortal, eyePos, eyeAngles)
 
             renderViewTable.origin = editedPos
             renderViewTable.angles = editedAng
@@ -75,7 +75,7 @@ hook.Add("RenderScene", "sev_portals_draw", function(eyePos, eyeAngles, fov)
             -- render the scene
             local up = exitPortal:GetUp()
             local oldClip = render.EnableClipping(true)
-            render.PushRenderTarget(SEv.Portals.PortalRTs[timesRendered])
+            render.PushRenderTarget(SEvPortals.PortalRTs[timesRendered])
             render.PushCustomClipPlane(up, up:Dot(exitPortal:GetPos() + up * 0.49))
             render.RenderView(renderViewTable)
             render.PopCustomClipPlane()
@@ -86,13 +86,13 @@ hook.Add("RenderScene", "sev_portals_draw", function(eyePos, eyeAngles, fov)
 
     physgun_halo:SetInt(oldHalo)
 
-    SEv.Portals.Rendering = false
+    SEvPortals.Rendering = false
     timesRendered = 0
 end)
 
 -- draw the player in renderview
 hook.Add("ShouldDrawLocalPlayer", "sev_portal_drawplayer", function()
-    if SEv.Portals and SEv.Portals.Rendering and not SEv.Portals.DrawPlayerInView then 
+    if SEvPortals and SEvPortals.Rendering and not SEvPortals.DrawPlayerInView then 
         return true 
     end
 end)
@@ -121,8 +121,8 @@ local function drawsky(pos, ang, size, size_2, color, materials)
 end
 
 hook.Add("PostDrawTranslucentRenderables", "sev_portal_skybox", function()
-    if not SEv.Portals or SEv.Portals.portalIndex < 1 then return end
-    if not SEv.Portals.Rendering or util.IsSkyboxVisibleFromPoint(renderViewTable.origin) then return end
+    if not SEvPortals or SEvPortals.portalIndex < 1 then return end
+    if not SEvPortals.Rendering or util.IsSkyboxVisibleFromPoint(renderViewTable.origin) then return end
     if not next(sky_materials) then return end
     render.OverrideDepthEnable(true, false)
     drawsky(renderViewTable.origin, angle_zero, skysize, -skysize * 2, color_white, sky_materials)

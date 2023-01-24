@@ -5,6 +5,11 @@
 --          I also asked permission from the addon creator before doing this.
 --              - Xalalau
 
+SEvPortals = {
+    portalIndex = 0,
+    enableFunneling = false
+}
+
 ENT.Type = "anim"
 ENT.Base = "base_gmodentity"
 
@@ -43,11 +48,11 @@ function ENT:GetExitSize()
 end
 
 function ENT:IncrementPortal()
-    SEv.Portals.portalIndex = SEv.Portals.portalIndex + 1
+    SEvPortals.portalIndex = SEvPortals.portalIndex + 1
 end
 
 function ENT:OnRemove()
-    SEv.Portals.portalIndex = SEv.Portals.portalIndex - 1
+    SEvPortals.portalIndex = SEvPortals.portalIndex - 1
     if SERVER and self.PORTAL_REMOVE_EXIT then
         SafeRemoveEntity(self:GetExitPortal())
     end
@@ -84,9 +89,9 @@ function ENT:UpdateTransmitState()
     return TRANSMIT_ALWAYS
 end
 
-SEv.Portals.PortalIndex = 0 --#ents.FindByClass("sev_portal")
-SEv.Portals.MaxRTs = 6
-SEv.Portals.TransformPortal = function(a, b, pos, ang)
+SEvPortals.PortalIndex = 0 --#ents.FindByClass("sev_portal")
+SEvPortals.MaxRTs = 6
+SEvPortals.TransformPortal = function(a, b, pos, ang)
     if not a or not b or not b:IsValid() or not a:IsValid() then return Vector(), Angle() end
     local editedPos = Vector()
     local editedAng = Angle()

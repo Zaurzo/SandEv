@@ -31,7 +31,7 @@ if CLIENT then
     local COLOR_GREEN = Color(0, 255, 0, 50)
     function TOOL:DrawHUD()
         local traceTable = util.GetPlayerTrace(self:GetOwner())
-        local trace = SEv.Portals.TraceLine(traceTable)
+        local trace = SEvPortals.TraceLine(traceTable)
         
         if not trace.Entity or not trace.Entity:IsValid() or not trace.Entity.GetClass or trace.Entity:GetClass() ~= "sev_portal" then return end    -- dont draw the world or else u crash lol
 
@@ -48,7 +48,7 @@ end
 
 function TOOL:LeftClick(trace)
     local traceTable = util.GetPlayerTrace(self:GetOwner())
-    local trace = SEv.Portals.TraceLine(traceTable)
+    local trace = SEvPortals.TraceLine(traceTable)
 
     if not trace.Entity or trace.Entity:GetClass() ~= "sev_portal" then return false end
     if CPPI and SERVER then if not trace.Entity:CPPICanTool(self:GetOwner(), "remover") then return false end end
@@ -61,7 +61,7 @@ end
 
 function TOOL:RightClick(trace)
     local traceTable = util.GetPlayerTrace(self:GetOwner())
-    local trace = SEv.Portals.TraceLine(traceTable)
+    local trace = SEvPortals.TraceLine(traceTable)
 
     if not trace.Entity or trace.Entity:GetClass() ~= "sev_portal" then return false end
     if CPPI and SERVER then if not trace.Entity:CPPICanTool(self:GetOwner(), "remover") then return false end end

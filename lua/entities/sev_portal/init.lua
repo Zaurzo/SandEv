@@ -19,7 +19,7 @@ function ENT:Initialize()
     else
         self:SetExitSize(self:GetExitSize())
     end
-    SEv.Portals.portalIndex = SEv.Portals.portalIndex + 1
+    SEvPortals.portalIndex = SEvPortals.portalIndex + 1
 end
 
 function ENT:SpawnFunction(ply, tr)

@@ -29,10 +29,10 @@ local function updateCalcViews(finalPos, finalVel)
         -- position ping compensation
         if freezePly and ply:Ping() > 5 then
             finalPos = finalPos + finalVel * FrameTime()
-            SEv.Portals.DrawPlayerInView = true
+            SEvPortals.DrawPlayerInView = true
         else
             finalPos = ply:EyePos()
-            SEv.Portals.DrawPlayerInView = false
+            SEvPortals.DrawPlayerInView = false
         end
 
         return {origin = finalPos, angles = angle}
@@ -64,7 +64,7 @@ else
             updateCalcViews(Vector(), Vector())
 
             if net.ReadBool() then
-                SEv.Portals.ToggleMirror()
+                SEvPortals.ToggleMirror()
             end
         end --singleplayer fixes (cuz stupid move hook isnt clientside in singleplayer)
 
@@ -94,7 +94,7 @@ local function editPlayerCollision(mv, ply)
     else
         -- extrusion in case the player enables non-ground collision and manages to clip outside of the portal while they are falling (rare case)
         if ply.SEv_PORTAL_STUCK_OFFSET ~= 0 then
-            local tr = SEv.Portals.TraceLine({start = ply:EyePos(), endpos = ply:EyePos() - Vector(0, 0, 64), filter = ply})
+            local tr = SEvPortals.TraceLine({start = ply:EyePos(), endpos = ply:EyePos() - Vector(0, 0, 64), filter = ply})
 
             if tr.Hit and SEv.Ent:GetRealClass(tr.Entity) ~= "sev_portal" then
                 ply.SEv_PORTAL_STUCK_OFFSET = nil
@@ -153,7 +153,7 @@ end
 hook.Add("Move", "sev_portal_teleport", function(ply, mv)
     if not IsValid(ply) then return end -- In one of my automatic error reports ply appeared as number... - Xala
 
-    if not SEv.Portals or SEv.Portals.portalIndex < 1 then 
+    if not SEvPortals or SEvPortals.portalIndex < 1 then 
         if ply.SEv_PORTAL_STUCK_OFFSET then
             ply:ResetHull()
             ply.SEv_PORTAL_STUCK_OFFSET = nil
@@ -166,7 +166,7 @@ hook.Add("Move", "sev_portal_teleport", function(ply, mv)
     traceTable.start = plyPos - mv:GetVelocity() * 0.02
     traceTable.endpos = plyPos + mv:GetVelocity() * 0.02
     traceTable.filter = ply
-    local tr = SEv.Portals.TraceLine(traceTable)
+    local tr = SEvPortals.TraceLine(traceTable)
 
     editPlayerCollision(mv, ply)
 
@@ -180,8 +180,8 @@ hook.Add("Move", "sev_portal_teleport", function(ply, mv)
 
             -- wow look at all of this code just to teleport the player
             local exitPortal = hitPortal:GetExitPortal()
-            local editedPos, editedAng = SEv.Portals.TransformPortal(hitPortal, exitPortal, tr.HitPos, ply:EyeAngles())
-            local _, editedVelocity = SEv.Portals.TransformPortal(hitPortal, exitPortal, nil, mv:GetVelocity():Angle())
+            local editedPos, editedAng = SEvPortals.TransformPortal(hitPortal, exitPortal, tr.HitPos, ply:EyeAngles())
+            local _, editedVelocity = SEvPortals.TransformPortal(hitPortal, exitPortal, nil, mv:GetVelocity():Angle())
             local max = math.Max(mv:GetVelocity():Length(), exitPortal:GetUp():Dot(-physenv.GetGravity() / 3))
 
             --ground can fluxuate depending on how the user places the portals, so we need to make sure we're not going to teleport into the ground
@@ -190,7 +190,7 @@ hook.Add("Move", "sev_portal_teleport", function(ply, mv)
             traceTable.start = editedPos + eyeHeight
             traceTable.endpos = editedPos - Vector(0, 0, 0.1)
             traceTable.filter = seamless_check
-            local floor_trace = SEv.Portals.TraceLine(traceTable)
+            local floor_trace = SEvPortals.TraceLine(traceTable)
             local finalPos = editedPos
 
             -- dont do extrusion if the player is noclipping
@@ -239,7 +239,7 @@ hook.Add("Move", "sev_portal_teleport", function(ply, mv)
                 ply:SetPos(finalPos)
 
                 if hitPortal:GetExitPortal() == hitPortal then
-                    SEv.Portals.ToggleMirror()
+                    SEvPortals.ToggleMirror()
                 end
             end
 
@@ -267,8 +267,8 @@ end)
 local searchPortalsRadius = 2000 -- Longer seek distances make reentry smoother
 local angleRange = math.pi / 6 -- 60º
 hook.Add("Move", "sev_portal_funneling", function(ply, move)
-    if not SEv.Portals.enableFunneling then return end
-    if not SEv.Portals or SEv.Portals.portalIndex < 1 then return end
+    if not SEvPortals.enableFunneling then return end
+    if not SEvPortals or SEvPortals.portalIndex < 1 then return end
 
     local velVec = move:GetVelocity()
     local minVelSqr = ply:GetRunSpeed() * ply:GetRunSpeed()

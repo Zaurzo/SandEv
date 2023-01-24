@@ -156,10 +156,6 @@ SEv = SEv or {
     },
     NPC = {},
     Ply = {},
-    Portals = {
-        portalIndex = 0,
-        enableFunneling = false
-    },
     Prop = {},
     Tool = {
         categoriesPanel,

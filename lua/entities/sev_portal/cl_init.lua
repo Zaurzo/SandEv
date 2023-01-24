@@ -1,11 +1,11 @@
 include("shared.lua")
 
 -- create global table
-SEv.Portals.VarDrawDistance = 3500
+SEvPortals.VarDrawDistance = 3500
 
 -- only render the portals that are in the frustum, or should be rendered
-SEv.Portals.ShouldRender = function(portal, eyePos, eyeAngle)
-    local varDrawDistance = isnumber(SEv.Portals.VarDrawDistance) and SEv.Portals.VarDrawDistance or SEv.Portals.VarDrawDistance:GetFloat() -- Xala
+SEvPortals.ShouldRender = function(portal, eyePos, eyeAngle)
+    local varDrawDistance = isnumber(SEvPortals.VarDrawDistance) and SEvPortals.VarDrawDistance or SEvPortals.VarDrawDistance:GetFloat() -- Xala
 
     local portalPos, portalUp, exitSize = portal:GetPos(), portal:GetUp(), portal:GetExitSize()
     local infrontPortal = (eyePos - portalPos):Dot(portalUp) > (-10 * exitSize[1]) -- true if behind the portal, false otherwise
@@ -20,11 +20,11 @@ local function startUpdateMesh(ent)
         ent:UpdatePhysmesh()
     else
         -- takes a minute to try and find the portal, if it cant, oh well...
-        timer.Create("sev_portal_init" .. SEv.Portals.portalIndex, 1, 60, function()
+        timer.Create("sev_portal_init" .. SEvPortals.portalIndex, 1, 60, function()
             if not ent or not ent:IsValid() or not ent.UpdatePhysmesh then return end
 
             ent:UpdatePhysmesh()
-            timer.Remove("sev_portal_init" .. SEv.Portals.portalIndex)
+            timer.Remove("sev_portal_init" .. SEvPortals.portalIndex)
         end)
     end
 end
@@ -52,17 +52,17 @@ hook.Add("InitPostEntity", "sev_portal_init", function()
     end
 
     -- this code creates the rendertargets to be used for the portals
-    SEv.Portals.PortalRTs = {}
-    SEv.Portals.PortalMaterials = {}
-    SEv.Portals.PixelVis = {}
+    SEvPortals.PortalRTs = {}
+    SEvPortals.PortalMaterials = {}
+    SEvPortals.PixelVis = {}
 
-    for i = 1, SEv.Portals.MaxRTs do
-        SEv.Portals.PortalRTs[i] = GetRenderTarget("SEvSeamlessPortal" .. i, ScrW(), ScrH())
-        SEv.Portals.PortalMaterials[i] = CreateMaterial("SEv.PortalsMaterial" .. i, "GMODScreenspace", {
-            ["$basetexture"] = SEv.Portals.PortalRTs[i]:GetName(),
+    for i = 1, SEvPortals.MaxRTs do
+        SEvPortals.PortalRTs[i] = GetRenderTarget("SEvSeamlessPortal" .. i, ScrW(), ScrH())
+        SEvPortals.PortalMaterials[i] = CreateMaterial("SEvPortalsMaterial" .. i, "GMODScreenspace", {
+            ["$basetexture"] = SEvPortals.PortalRTs[i]:GetName(),
             ["$model"] = "1"
         })
-        SEv.Portals.PixelVis[i] = util.GetPixelVisibleHandle()
+        SEvPortals.PixelVis[i] = util.GetPixelVisibleHandle()
     end
 end)
 
@@ -107,7 +107,7 @@ local drawMat1 = Material("models/props_combine/combine_interface_disp")
 local drawMat2 = Material("null")
 function ENT:Draw()
     if self:GetNWBool("BlockRendering", false) then return end
-    if not SEv.Portals.PortalMaterials then return end
+    if not SEvPortals.PortalMaterials then return end
 
     local backAmt = 3 * self:GetExitSize()[3]
     local backVec = Vector(0, 0, -backAmt + 0.5)
@@ -123,7 +123,7 @@ function ENT:Draw()
     end
 
     -- holy shit lol this if statment
-    if SEv.Portals.Rendering or exitInvalid or halo.RenderedEntity() == self or not SEv.Portals.ShouldRender(self, EyePos(), EyeAngles()) then
+    if SEvPortals.Rendering or exitInvalid or halo.RenderedEntity() == self or not SEvPortals.ShouldRender(self, EyePos(), EyeAngles()) then
         if not self:GetDisableBackface() then
             render.DrawBox(self:GetPos(), self:LocalToWorldAngles(Angle(0, 90, 0)), Vector(-scaley, -scalex, -backAmt * 2 + 0.5), Vector(scaley, scalex, 0.5))
         end
@@ -160,7 +160,7 @@ function ENT:Draw()
     DrawQuadEasier(self, Vector(-scaley,  scalex, -backAmt), backVec, 2)
 
     -- draw the actual portal texture
-    local portalmat = SEv.Portals.PortalMaterials
+    local portalmat = SEvPortals.PortalMaterials
     render.SetMaterial(portalmat[self.PORTAL_RT_NUMBER or 1])
     render.SetStencilCompareFunction(STENCIL_EQUAL)
 
@@ -182,7 +182,7 @@ local cursedMat = CreateMaterial("SEv_Portal_Flipscene", "GMODScreenspace", {
     ["$basetexture"] = cursedRT:GetName(),
 })
 
-function SEv.Portals.ToggleMirror(enable)
+function SEvPortals.ToggleMirror(enable)
     if enable == nil then
         enable = not mirrorDimensionState
     end
@@ -200,12 +200,12 @@ function SEv.Portals.ToggleMirror(enable)
         end)
 
         hook.Add("PostDrawTranslucentRenderables", "sev_portal_flip_scene", function(_, sky, sky3d)
-            if rendering or SEv.Portals.Rendering then return end
+            if rendering or SEvPortals.Rendering then return end
             render.SetMaterial(cursedMat)
             render.DrawScreenQuadEx(ScrW(), 0, -ScrW(), ScrH())
 
             if LocalPlayer():Health() <= 0 then
-                SEv.Portals.ToggleMirror(false)
+                SEvPortals.ToggleMirror(false)
             end
         end)
 
