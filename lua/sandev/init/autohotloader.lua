@@ -137,6 +137,16 @@ local isSEvMounted = false
 local hotloaderAddonInfo = {}
 local hotloadedExtraAddCSLua = {} -- Used on dedicated servers only
 
+-- Initialize SandEv (shared). Wait for gma to be fully mounted before starting
+local delayStartSandev = 1.2
+-- Remove temp detours after SandEv initialization
+local delayRemoveTempDetours = delayStartSandev + 0.1
+-- Request SandEv init on CL. Wait for SandEv init on SV so files are addcsluad
+-- Needs to be less than delayStartSandev
+local delayRequestMountSandevCl = 0.5
+-- This delay prevents net overflows when the map is started
+local delaySendGma = 0.3
+
 -- SEv info
 local SEVInitFile = "autorun/sev_init.lua"
 local SEVGMA = "sandev.dat" -- Data folder
@@ -412,7 +422,7 @@ function SHL:HotloadSEv()
     isSEvMounted = true
 
     -- Start SandEv
-    timer.Simple(0.6, function()
+    timer.Simple(delayStartSandev, function()
         if CLIENT then
             local sev_portal_init = hook.GetTable()["InitPostEntity"]["sev_portal_init"]
             sev_portal_init()
@@ -423,7 +433,7 @@ function SHL:HotloadSEv()
     end)
 
     -- Remove temporary detours
-    timer.Simple(1.5, function()
+    timer.Simple(delayRemoveTempDetours, function()
         AddCSLuaFile = AddCSLuaFileOriginal
         include = includeOriginal
     end)
@@ -434,7 +444,7 @@ function SHL:RequestMountSEvOnCl(ply)
     if CLIENT then return end
 
     if game.IsDedicated then
-        timer.Simple(0.9, function()
+        timer.Simple(delayRequestMountSandevCl, function()
             local compressedString = util.Compress(util.TableToJSON(hotloadedExtraAddCSLua))
             SendData("sandev_addcslua_extra_dedicated", compressedString, "ReceivedExtraAddCSLua", nil)
         end)
@@ -589,7 +599,7 @@ net.Receive("sev_request_gma", function()
         local gmaContent = gmaCopy:Read(gmaCopy:Size())
         gmaCopy:Close()
 
-        timer.Simple(0.2, function()
+        timer.Simple(delaySendGma, function()
             SendData("sandev_gma", gmaContent, callbackName, nil)
         end)
     end
@@ -767,7 +777,7 @@ function StartSEvHotload(enableLogging)
 
     -- Get the server state and start the hotload
     if CLIENT then
-        timer.Simple(0, function()
+        timer.Simple(0, function() -- Forces the net to work
             net.Start("sev_get_addon_info_from_sv")
             net.SendToServer()
         end)
