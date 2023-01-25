@@ -385,7 +385,7 @@ function SHL:HotloadSEv()
             SHL:ShowLog("[AddCSLuaFile] " .. path)
             AddCSLuaFileOriginal(path)
 
-            if game.IsDedicated and not string.find(path, "sandev") and not string.find(path, "sev_") then
+            if game.IsDedicated() and not string.find(path, "sandev") and not string.find(path, "sev_") then
                 local fileContent = file.Read(path, 'LUA')
                 hotloadedExtraAddCSLua[path] = fileContent
             end
@@ -464,7 +464,7 @@ end
 function SHL:RequestMountSEvOnCl(ply)
     if CLIENT then return end
 
-    if game.IsDedicated then
+    if game.IsDedicated() then
         timer.Simple(delayRequestMountSandevCl, function()
             local compressedString = util.Compress(util.TableToJSON(hotloadedExtraAddCSLua))
             SendData("sandev_addcslua_extra_dedicated", compressedString, "ReceivedExtraAddCSLua", nil)
