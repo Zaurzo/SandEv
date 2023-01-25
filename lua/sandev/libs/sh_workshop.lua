@@ -60,7 +60,7 @@ end
         }
     }
 ]]
-local function GetGMAInfo(gma)
+function SEv.Workshop:GetGMAInfo(gma)
     -- To-do: create a "File lib" to add these useful conversions I needed to do here -Xala
     local function Int64(_file) -- little-endian
         local low  = _file:ReadLong() -- 32-bit integer
