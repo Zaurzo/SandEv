@@ -4,7 +4,7 @@
     To use it in your project, just include the following lines in your shared initialization file (e.g. lua/autorun/mystuff.lua):
 
 
-    hook.Add("PreGamemodeLoaded", "SEv_init", function()
+    hook.Add("OnGamemodeLoaded", "SEv_init", function()
         if SEv then return end
         timer.Simple(0, function()
             http.Fetch("https://raw.githubusercontent.com/Xalalau/SandEv/main/lua/sandev/init/autohotloader.lua", function(SEvHotloader)
@@ -174,8 +174,6 @@ local hotloadedExtraAddCSLua = {} -- Used on dedicated servers only
 local delayStartSandev = 0.6
 -- Remove temp detours after SandEv initialization
 local delayRemoveTempDetours = delayStartSandev + 0.1
--- Finish SandEv init on CL when on a dedicated server. Wait for SandEv init addcslua on SV
-local delayMountClDedicated = 0.1
 -- This delay prevents net overflows when the map is started
 local delaySendGma = 0.2
 
@@ -466,10 +464,8 @@ function SHL:HotloadSEv()
             if SERVER then
                 sev_init()
 
-                timer.Simple(delayMountClDedicated, function()
-                    local compressedString = util.Compress(util.TableToJSON(hotloadedExtraAddCSLua))
-                    SendData("sandev_addcslua_extra_dedicated", compressedString, "ReceivedExtraAddCSLua", nil)
-                end)
+                local compressedString = util.Compress(util.TableToJSON(hotloadedExtraAddCSLua))
+                SendData("sandev_addcslua_extra_dedicated", compressedString, "ReceivedExtraAddCSLua", nil)
             end
         else
             sev_init()
@@ -521,7 +517,7 @@ function SHL:MountSEv(path)
     -- Check wether the mounted files are accessible or not
     local mountedFiles = 0
     local retries = 10
-    timer.Create(path, 0.1, 0, function()
+    timer.Create(path, 0.3, 0, function() -- It's very important that we wait here, the files need this time to successfully mount.
         for k, _file in ipairs(files) do
             if file.Exists(_file, "GAME") then
                 SHL:ShowLog("[file.Exists]: " .. _file)
