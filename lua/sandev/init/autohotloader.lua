@@ -172,9 +172,8 @@ local hotloadedExtraAddCSLua = {} -- Used on dedicated servers only
 local delayStartSandev = 0.6
 -- Remove temp detours after SandEv initialization
 local delayRemoveTempDetours = delayStartSandev + 0.1
--- Request SandEv init on CL. Wait for SandEv init on SV so files are addcsluad
--- Needs to be less than delayStartSandev so we can include files in the client before the server starts loading the bases
-local delayRequestMountSandevCl = 0.3
+-- Finish SandEv init on CL when on a dedicated server. Wait for SandEv init addcslua on SV
+local delayMountClDedicated = 0.1
 -- This delay prevents net overflows when the map is started
 local delaySendGma = 0.2
 
@@ -465,8 +464,10 @@ function SHL:HotloadSEv()
             if SERVER then
                 sev_init()
 
-                local compressedString = util.Compress(util.TableToJSON(hotloadedExtraAddCSLua))
-                SendData("sandev_addcslua_extra_dedicated", compressedString, "ReceivedExtraAddCSLua", nil)
+                timer.Simple(delayMountClDedicated, function()
+                    local compressedString = util.Compress(util.TableToJSON(hotloadedExtraAddCSLua))
+                    SendData("sandev_addcslua_extra_dedicated", compressedString, "ReceivedExtraAddCSLua", nil)
+                end)
             end
         else
             sev_init()
