@@ -4,7 +4,7 @@
     To use it in your project, just include the following lines in your shared initialization file (e.g. lua/autorun/mystuff.lua):
 
 
-    hook.Add("Initialize", "SEv_init", function()
+    hook.Add("PreGamemodeLoaded", "SEv_init", function()
         if SEv then return end
         http.Fetch("https://raw.githubusercontent.com/Xalalau/SandEv/main/lua/sandev/init/autohotloader.lua", function(SEvHotloader)
             file.Write("sevloader.txt", SEvHotloader)
