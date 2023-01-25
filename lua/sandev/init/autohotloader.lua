@@ -22,7 +22,7 @@
     end)
 
 
-    Only one instance of SandEv will be executed no matter how many times this StartSEvHotload() is called and
+    Only one instance of SandEv will be executed no matter how many times StartSEvHotload() is called and
     the gma loading process will be done as follows:
 
     1) SEv is running on the server
