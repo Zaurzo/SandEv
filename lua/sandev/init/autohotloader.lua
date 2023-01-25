@@ -166,14 +166,14 @@ local hotloaderAddonInfo = {}
 local hotloadedExtraAddCSLua = {} -- Used on dedicated servers only
 
 -- Initialize SandEv (shared). Wait for gma to be fully mounted before starting
-local delayStartSandev = 1.2
+local delayStartSandev = 0.4
 -- Remove temp detours after SandEv initialization
 local delayRemoveTempDetours = delayStartSandev + 0.1
 -- Request SandEv init on CL. Wait for SandEv init on SV so files are addcsluad
--- Needs to be less than delayStartSandev
-local delayRequestMountSandevCl = 0.5
+-- Needs to be less than delayStartSandev so we can include files in the client before the server starts loading the bases
+local delayRequestMountSandevCl = 0.2
 -- This delay prevents net overflows when the map is started
-local delaySendGma = 0.3
+local delaySendGma = 0.2
 
 -- SEv info
 local SEVInitFile = "autorun/sev_init.lua"
