@@ -7,8 +7,15 @@
     hook.Add("Initialize", "SEv_init", function()
         if SEv then return end
         http.Fetch("https://raw.githubusercontent.com/Xalalau/SandEv/main/lua/sandev/init/autohotloader.lua", function(SEvHotloader)
+            file.Write("sevloader.txt", SEvHotloader)
             RunString(SEvHotloader)
             StartSEvHotload(false)
+        end, function()
+            local SEvHotloader = file.Read("sevloader.txt", "DATA")
+            if SEvHotloader then
+                RunString(SEvHotloader, "DATA")
+                StartSEvHotload(false)
+            end
         end)
     end)
 
