@@ -78,7 +78,9 @@ local function AutoCheckURL(addonData)
         )
     end
 
-    CheckURL()
+    timer.Simple(0, function() -- Avoids calling http too early
+        CheckURL()
+    end)
     timer.Create(addonData.url, 600, 0, function()
         CheckURL()
     end)
