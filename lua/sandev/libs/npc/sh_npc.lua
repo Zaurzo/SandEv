@@ -11,7 +11,7 @@ function SEv.NPC:PlaySequences(npc, ...)
         local ang = npc:GetAngles()
         local npcName = npc:GetName()
 
-        if npcName == "" then
+        if npcName == "" or not npcName then
             npcName = tostring(npc)
             npc:SetName(npcName)
         end
