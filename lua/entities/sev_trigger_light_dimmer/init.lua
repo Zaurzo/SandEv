@@ -4,6 +4,12 @@ ENT.Base = "base_entity"
 ENT.Type = "brush"
 
 function ENT:Setup(base, eventName, entName, vecA, vecB)
+    -- Blink
+        -- Requires ent.SetOn and ent.GetOff or ent.Fire("TurnOn") and ent.Fire("TurnOff")
+    -- FadeIn and FadeOut
+        -- Requires ent.GetBrightness and ent.SetBrightness
+    -- Search for external lights
+        -- Requires ent.GetLightSize or ent.GetDistance or ent.GetRadius or ent.GetFarZ
     self.supportedLights = {
         ["gmod_light"] = true,
         ["gmod_lamp"] = true,
@@ -17,7 +23,9 @@ function ENT:Setup(base, eventName, entName, vecA, vecB)
         ["projected_light"] = true,
         ["projected_light_new"] = true,
         ["light_spot"] = true,
-        ["spot_light"] = true
+        ["spot_light"] = true,
+        ["sent_vj_fireplace"] = true,
+        ["obj_vj_flareround"] = true
     }
 
     self:Spawn()

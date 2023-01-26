@@ -34,6 +34,7 @@ hook.Add("OnEntityCreated", "sev_light_spawned", function(ent)
     if ent and ent:IsValid() then
         SEv.Addon:AddWiremodLightFunctions(ent)
         SEv.Addon:AddAdvLightEntsFunctions(ent)
+        SEv.Addon:AddVJLightFunctions(ent)
     end
 end)
 
@@ -68,6 +69,16 @@ function SEv.Addon:CurseVJFlareRound(ent)
     end)
 
     return true
+end
+
+-- Prevent the player from lighting vc fireplace and vj flarerounds (SERVER)
+-- https://steamcommunity.com/workshop/filedetails/?id=131759821
+function SEv.Addon:AddVJLightFunctions(ent)
+    if ent:GetClass() == "sent_vj_fireplace" or ent:GetClass() == "obj_vj_flareround" then
+        function ent:GetRadius()
+            return 200
+        end
+    end
 end
 
 -- Wiremod lamps and lights
