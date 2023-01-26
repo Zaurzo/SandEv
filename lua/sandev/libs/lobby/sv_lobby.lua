@@ -522,7 +522,8 @@ function SEv.Lobby:Join(tick_s, playing_time_s, delayTolerance, localMode)
                         if data['players'] then
                             local toRemove = {}
                             for entIndex, invaderData in pairs(data['invaders']) do
-                                if not invaderData.pos then
+                                if invaderData.status ~= "ongoing" then
+                                elseif not invaderData.pos then
                                     table.insert(toRemove, entIndex)
                                 else
                                     local pos = string.Explode(",", invaderData.pos, false)
@@ -539,14 +540,13 @@ function SEv.Lobby:Join(tick_s, playing_time_s, delayTolerance, localMode)
                                     data['invaders'][entIndex] = nil
                                 end
                             end
-                            print("data")
+
                             hook.Run(self.base.id .."_lobby_data", data, tick_s, playing_time_s)
                         end
 
                         -- Inform the server about the start of the lobby
                         -- This runs as soon as there is invader information available
                         if not alertedPlayers and data['invaders'] and table.Count(data['invaders']) > 0 then
-                            print("GOGOGO")
                             hook.Run(self.base.id .."_lobby_event_started", data)
                             alertedPlayers = true
                         end
@@ -554,14 +554,12 @@ function SEv.Lobby:Join(tick_s, playing_time_s, delayTolerance, localMode)
                         -- Lobby result (maxtime, unsolved, survived, nolobby, defeated)
                         if data['result'] then
                             self:Exit()
-                            print("Acabou")
                             hook.Run(self.base.id .."_lobby_result", data['result'])
                         end
 
                         -- Safety stop (the timer is suposed to always stop before it ends)
                         if timer.RepsLeft(self.base.id .."_lobby_connect_lobby") == 0 then
                             self:Exit()
-                            print("Acabou forçado")
                             hook.Run(self.base.id .."_lobby_result", "maxtime")
                         end
                     end,
