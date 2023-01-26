@@ -46,7 +46,7 @@ net.Receive("sev_set_arctics_night_vision", function()
 end)
 
 function SEv.Addon:SetArcticsNightVision()
-    if ArcticNVGs_Enabled then
+    if ArcticNVGs and ArcticNVGs_Enabled then
         local goggles = LocalPlayer():GetNWInt("nvg", 0)
         local goggles_table = ArcticNVGs[goggles]
 

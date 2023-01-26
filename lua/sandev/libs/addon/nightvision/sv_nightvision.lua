@@ -51,7 +51,7 @@ end)
 
 function SEv.Addon:SetArcticsNightVision(ply)
     timer.Simple(1, function()
-        if not ply:IsValid() then return end
+        if not ply:IsValid() or not ArcticNVGs then return end
 
         local drop = (ArcticNVGs[ply:GetNWInt("nvg", 0)] or {}).Entity
 
