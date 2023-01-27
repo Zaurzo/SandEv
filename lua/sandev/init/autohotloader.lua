@@ -159,6 +159,7 @@ if SERVER then
     util.AddNetworkString("sev_request_gma")
     util.AddNetworkString("sev_request_mount_on_cl")
     util.AddNetworkString("sev_is_dedicated")
+    util.AddNetworkString("sev_request_addcslua_extra_dedicated")
 end
 
 local isDedicated = game.IsDedicated() -- game.IsDedicated() is always false on the client, so I "fix" it later
@@ -170,12 +171,20 @@ local isSEvMounted = false
 local hotloaderAddonInfo = {}
 local hotloadedExtraAddCSLua = {} -- Used on dedicated servers only
 
--- Initialize SandEv (shared). Wait for gma to be fully mounted before starting
-local delayStartSandev = 0.6
--- Remove temp detours after SandEv initialization
-local delayRemoveTempDetours = delayStartSandev + 0.1
--- This delay prevents net overflows when the map is started
+-- This delay prevents net overflows when the map starts
 local delaySendGma = 0.2
+-- Check if the gma is fully mounted. Some time is needed so the game can
+-- adapt to the new content
+local delayCheckMountedFiles = 0.5
+-- Mount the gma on client on dedicated servers. Must run after the mounted
+-- files are checked because it's the same time we start to include them. We
+-- can't include the client content before the server.
+local delayDedicatedMountCl = delayCheckMountedFiles + 0.5
+-- Initialize SandEv (shared). An extra delay so we can wait for the gma to be
+-- fully mounted. It's applied both on server and client.
+local delayStartSandev = 1
+-- Remove temp detours after SandEv initialization
+local delayRemoveTempDetours = delayDedicatedMountCl + delayStartSandev + 10
 
 -- SEv info
 local SEVInitFile = "autorun/sev_init.lua"
@@ -466,6 +475,9 @@ function SHL:HotloadSEv()
 
                 local compressedString = util.Compress(util.TableToJSON(hotloadedExtraAddCSLua))
                 SendData("sandev_addcslua_extra_dedicated", compressedString, "ReceivedExtraAddCSLua", nil)
+            else
+                net.Start("sev_request_addcslua_extra_dedicated")
+                net.SendToServer()
             end
         else
             sev_init()
@@ -479,6 +491,14 @@ function SHL:HotloadSEv()
     end)
 end
 
+-- Client requests addcslua info from the server to finish hotloading the SandEv
+if SERVER then
+    net.Receive("sev_request_addcslua_extra_dedicated", function(len, ply)
+        local compressedString = util.Compress(util.TableToJSON(hotloadedExtraAddCSLua))
+        SendData("sandev_addcslua_extra_dedicated", compressedString, "ReceivedExtraAddCSLua", nil)
+    end)
+end
+
 -- AddCSLua for files added by the SandEv bases system
 -- This function is only used on dedicated servers
 -- DO NOT call directly!! It's a callback for the SendData function
@@ -488,7 +508,10 @@ function ReceivedExtraAddCSLua(data)
     hotloadedExtraAddCSLua = util.JSONToTable(util.Decompress(data))
 
     local sev_init = hook.GetTable()["InitPostEntity"]["sev_init"]
-    sev_init()
+
+    timer.Simple(delayDedicatedMountCl, function()
+        sev_init()
+    end)
 end
 
 -- Mount a gma file
@@ -517,7 +540,7 @@ function SHL:MountSEv(path)
     -- Check wether the mounted files are accessible or not
     local mountedFiles = 0
     local retries = 10
-    timer.Create(path, 0.3, 0, function() -- It's very important that we wait here, the files need this time to successfully mount.
+    timer.Create(path, delayCheckMountedFiles, 0, function() -- It's very important that we wait here, the files need this time to successfully mount.
         for k, _file in ipairs(files) do
             if file.Exists(_file, "GAME") then
                 SHL:ShowLog("[file.Exists]: " .. _file)
