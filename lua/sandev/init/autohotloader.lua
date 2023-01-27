@@ -812,6 +812,11 @@ function StartSEvHotload(enableLogging)
         return
     end
 
+    -- Clear old values if someone manually deleted a cached SandEv
+    if not file.Exists(SEVGMA, "DATA") then
+        sql.Query("DROP TABLE SEv;")
+    end
+
     -- Initialize persistent data
     SHL:InitSEvSQL()
 
