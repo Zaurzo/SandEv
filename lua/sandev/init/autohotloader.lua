@@ -820,8 +820,6 @@ function StartSEvHotload(enableLogging)
     -- Initialize persistent data
     SHL:InitSEvSQL()
 
-    -- Set net names
-
     -- Get the server state and start the hotload
     if CLIENT then
         timer.Simple(0, function() -- Forces the net to work
