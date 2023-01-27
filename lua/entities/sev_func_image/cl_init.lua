@@ -17,7 +17,7 @@ function ENT:Initialize()
 end
 
 function ENT:Draw()
-    if not SEv.Material.FixVertexLitMaterial then return end -- Wait for the autohotloader
+    if not SEv or not SEv.Material.FixVertexLitMaterial then return end -- Wait for the autohotloader
 
     local clientKey = self:GetNWString("clientKey")
 
