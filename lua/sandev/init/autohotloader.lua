@@ -172,10 +172,10 @@ local hotloaderAddonInfo = {}
 local hotloadedExtraAddCSLua = {} -- Used on dedicated servers only
 
 -- This delay prevents net overflows when the map starts
-local delaySendGma = 0.3
+local delaySendGma = 0.2
 -- Check if the gma is fully mounted. Some time is needed so the game can
 -- adapt to the new content
-local delayCheckMountedFiles = 1.5
+local delayCheckMountedFiles = 1
 -- Mount the gma on client on dedicated servers. Must run after the mounted
 -- files are checked because it's the same time we start to include them. We
 -- can't include the client content before the server.
