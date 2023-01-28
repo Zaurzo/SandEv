@@ -817,16 +817,18 @@ function StartSEvHotload(enableLogging)
     end
 
     -- Clear old values if someone manually deleted a cached SandEv
-    if not file.Exists(SEVGMA, "DATA") then
+    if not file.Exists(SEVGMA, "DATA") and sql.TableExists("SEv") then
         sql.Query("DROP TABLE SEv;")
     end
 
     -- Initialize persistent data
-    SHL:InitSEvSQL()
+    timer.Simple(0.1, function() -- Just to make sure "DROP TABLE SEv;" doesn't conflict here for some reason. idk if it's needed
+        SHL:InitSEvSQL()
+    end)
 
     -- Get the server state and start the hotload
     if CLIENT then
-        timer.Simple(0, function() -- Forces the net to work
+        timer.Simple(0.2, function() -- Forces the net to work
             net.Start("sev_get_addon_info_from_sv")
             net.SendToServer()
         end)
