@@ -175,14 +175,14 @@ local hotloadedExtraAddCSLua = {} -- Used on dedicated servers only
 local delaySendGma = 0.3
 -- Check if the gma is fully mounted. Some time is needed so the game can
 -- adapt to the new content
-local delayCheckMountedFiles = 2.5
+local delayCheckMountedFiles = 1.5
 -- Mount the gma on client on dedicated servers. Must run after the mounted
 -- files are checked because it's the same time we start to include them. We
 -- can't include the client content before the server.
 local delayDedicatedMountCl = delayCheckMountedFiles + 0.5
 -- Initialize SandEv (shared). An extra delay so we can wait for the gma to be
 -- fully mounted. It's applied both on server and client.
-local delayStartSandev = 1.5
+local delayStartSandev = 1
 -- Remove temp detours after SandEv initialization
 local delayRemoveTempDetours = delayDedicatedMountCl + delayStartSandev + 10
 
