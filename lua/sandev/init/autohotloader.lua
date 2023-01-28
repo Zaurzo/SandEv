@@ -171,18 +171,22 @@ local isSEvMounted = false
 local hotloaderAddonInfo = {}
 local hotloadedExtraAddCSLua = {} -- Used on dedicated servers only
 
+-- Note: these timers are AWFUL and I hate how the loader functions call each order in sequence.
+--       If someone wants to use this code to make a better generic one, I'd appreciate it. -Xala
+
 -- This delay prevents net overflows when the map starts
-local delaySendGma = 0.2
+local delaySendGma = 0.3
 -- Check if the gma is fully mounted. Some time is needed so the game can
 -- adapt to the new content
-local delayCheckMountedFiles = 1
+local delayCheckMountedFiles = 1.5
 -- Mount the gma on client on dedicated servers. Must run after the mounted
 -- files are checked because it's the same time we start to include them. We
 -- can't include the client content before the server.
 local delayDedicatedMountCl = delayCheckMountedFiles + 0.5
 -- Initialize SandEv (shared). An extra delay so we can wait for the gma to be
 -- fully mounted. It's applied both on server and client.
-local delayStartSandev = 1
+-- Must be at least 1s bigger than delayCheckMountedFiles
+local delayStartSandev = (1 + delayCheckMountedFiles) + 1.5
 -- Remove temp detours after SandEv initialization
 local delayRemoveTempDetours = delayDedicatedMountCl + delayStartSandev + 10
 
