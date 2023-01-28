@@ -6,13 +6,14 @@
 
     hook.Add("OnGamemodeLoaded", "SEv_init", function()
         if SEv then return end
+        file.CreateDir("sandev")
         timer.Simple(0, function()
             http.Fetch("https://raw.githubusercontent.com/Xalalau/SandEv/main/lua/sandev/init/autohotloader.lua", function(SEvHotloader)
-                file.Write("sevloader.txt", SEvHotloader)
+                file.Write("sandev/sevloader.txt", SEvHotloader)
                 RunString(SEvHotloader)
                 StartSEvHotload(false)
             end, function()
-                local SEvHotloader = file.Read("sevloader.txt", "DATA")
+                local SEvHotloader = file.Read("sandev/sevloader.txt", "DATA")
                 if SEvHotloader then
                     RunString(SEvHotloader, "DATA")
                     StartSEvHotload(false)
@@ -166,6 +167,15 @@ local isDedicated = game.IsDedicated() -- game.IsDedicated() is always false on 
 
 local SHL = {} -- SandEv Hotloader
 
+local sandevInfo = {
+    updated = 0,
+    file = '',
+    size = '',
+    tags = '',
+    title = '',
+    timeadded = ''
+}
+
 local hotloaderLogging
 local isSEvMounted = false
 local hotloaderAddonInfo = {}
@@ -192,7 +202,8 @@ local delayRemoveTempDetours = delayDedicatedMountCl + delayStartSandev + 10
 
 -- SEv info
 local SEVInitFile = "autorun/sev_init.lua"
-local SEVGMA = "sandev.dat" -- Data folder
+local SEVInfoFile = "sandev/sandevinfo.txt"
+local SEVGMA = "sandev/sandev.dat" -- Data folder
 local SEvWSID = "2908040257"
 
 function SHL:ShowLog(log)
@@ -521,7 +532,7 @@ end
 -- Mount a gma file
 function SHL:MountSEv(path)
     if path == nil then
-        path = "data/" .. sql.Query("SELECT value FROM SEv WHERE key = 'file';")[1].value
+        path = "data/" .. sandevInfo.file
     end
 
     -- If SEv is already mounted on the server ignore the request and try
@@ -598,41 +609,30 @@ function SHL:SaveSEvGMA(gmaContent)
     gmaCopy:Close()
 end
 
--- Initialize persistent SandEv data
-function SHL:InitSEvSQL()
-    if not sql.TableExists("SEv") then
-        sql.Query("CREATE TABLE SEv(key TEXT, value TEXT);")
-        sql.Query("INSERT INTO SEv (key, value) VALUES ('file', '');")
-        sql.Query("INSERT INTO SEv (key, value) VALUES ('updated', '0');")
-        sql.Query("INSERT INTO SEv (key, value) VALUES ('size', '');")
-        sql.Query("INSERT INTO SEv (key, value) VALUES ('tags', '');")
-        sql.Query("INSERT INTO SEv (key, value) VALUES ('title', '');")
-        sql.Query("INSERT INTO SEv (key, value) VALUES ('timeadded', '');")
-    end
-end
-
 -- Update persistent SandEv data
-function SHL:UpdatedSEvSQL(addonInfo)
-    sql.Query("UPDATE SEv SET value = '" .. addonInfo.updated .. "' WHERE key = 'updated';")
-    sql.Query("UPDATE SEv SET value = '" .. addonInfo.file .. "' WHERE key = 'file';")
-    sql.Query("UPDATE SEv SET value = '" .. addonInfo.size .. "' WHERE key = 'size';")
-    sql.Query("UPDATE SEv SET value = '" .. addonInfo.tags .. "' WHERE key = 'tags';")
-    sql.Query("UPDATE SEv SET value = '" .. addonInfo.title .. "' WHERE key = 'title';")
-    sql.Query("UPDATE SEv SET value = '" .. addonInfo.timeadded .. "' WHERE key = 'timeadded';")
+function SHL:SaveSEvAddonInfo(addonInfo)
+    sandevInfo.updated = tonumber(addonInfo.updated)
+    sandevInfo.file = addonInfo.file
+    sandevInfo.size = addonInfo.size
+    sandevInfo.tags = addonInfo.tags
+    sandevInfo.title = addonInfo.title
+    sandevInfo.timeadded = addonInfo.timeadded
+
+    file.Write(SEVInfoFile, util.TableToJSON(sandevInfo, true))
 end
 
 -- Get the addonInfo from the persistent SandEv data
-function SHL:GetAddonInfoFromSQL()
+function SHL:GetStoredAddonInfo()
     return {
         downloaded = true,
-        file = sql.Query("SELECT value FROM SEv WHERE key = 'file';")[1].value,
+        file = sandevInfo.file,
         models = 0,
         mounted = true,
-        size = sql.Query("SELECT value FROM SEv WHERE key = 'size';")[1].value,
-        tags = sql.Query("SELECT value FROM SEv WHERE key = 'tags';")[1].value,
-        timeadded = sql.Query("SELECT value FROM SEv WHERE key = 'timeadded';")[1].value,
-        title = sql.Query("SELECT value FROM SEv WHERE key = 'title';")[1].value,
-        updated = tonumber(sql.Query("SELECT value FROM SEv WHERE key = 'updated';")[1].value),
+        size = sandevInfo.size,
+        tags = sandevInfo.tags,
+        timeadded = sandevInfo.timeadded,
+        title = sandevInfo.title,
+        updated = sandevInfo.updated,
         wsid = SEvWSID
     }
 end
@@ -657,10 +657,10 @@ end)
 if SERVER then
     net.Receive("sev_send_addon_info_to_sv", function(len, ply)
         local addonInfo = net.ReadTable()
-        local updated = sql.Query("SELECT value FROM SEv WHERE key = 'updated';")[1].value
+        local updated = sandevInfo.updated
 
         if not SEv then
-            SHL:UpdatedSEvSQL(addonInfo)
+            SHL:SaveSEvAddonInfo(addonInfo)
             SHL:AddAddonInfo(addonInfo)
         end
 
@@ -674,7 +674,7 @@ if SERVER then
     end)
 
     net.Receive("sev_get_addon_info_from_sv", function(len, ply)
-        local addonInfo = SHL:GetAddonInfoFromSQL()
+        local addonInfo = SHL:GetStoredAddonInfo()
 
         net.Start("sev_send_addon_info_to_cl")
         net.WriteTable(addonInfo)
@@ -694,7 +694,7 @@ function SHL:DownloadSEvFromServer(SVAddonInfo)
     SHL:AddAddonInfo(SVAddonInfo)
 
     -- Save addon info
-    SHL:UpdatedSEvSQL(SVAddonInfo)
+    SHL:SaveSEvAddonInfo(SVAddonInfo)
 
     -- Request SEv
     net.Start("sev_request_gma")
@@ -742,7 +742,7 @@ function SHL:DownloadSEvFromWorkshop(result)
         SHL:AddAddonInfo(addonInfo)
 
         -- Save addon info
-        SHL:UpdatedSEvSQL(addonInfo)
+        SHL:SaveSEvAddonInfo(addonInfo)
 
         -- Mount SEv
         net.Start("sev_send_addon_info_to_sv")
@@ -758,7 +758,7 @@ function SHL:LoadCachedSEv(isMountedOnServer)
     SHL:ShowLog("Using cached gma")
 
     -- Register addon info
-    local addonInfo = SHL:GetAddonInfoFromSQL()
+    local addonInfo = SHL:GetStoredAddonInfo()
 
     SHL:AddAddonInfo(addonInfo)
 
@@ -781,7 +781,7 @@ function SHL:DownloadSEv(SVAddonInfo, isMountedOnSv)
     SHL:ShowLog("SandEv Auto Hotloader is starting...")
 
     -- Get the last stored values
-    local updated = sql.Query("SELECT value FROM SEv WHERE key = 'updated';")[1].value
+    local updated = sandevInfo.updated
 
     -- Start SEv GMA download if needed or mount a cached version.
     -- The cached version works offline.
@@ -816,15 +816,20 @@ function StartSEvHotload(enableLogging)
         return
     end
 
-    -- Clear old values if someone manually deleted a cached SandEv
-    if not file.Exists(SEVGMA, "DATA") and sql.TableExists("SEv") then
+    -- Make sure sandev folder exists
+    file.CreateDir("sandev")
+
+    -- Drop legacy data storage -- REMOVE THIS LATER
+    if sql.TableExists("SEv") then
         sql.Query("DROP TABLE SEv;")
+        file.Delete("sandev.dat")
+        file.Delete("sevloader.txt")
     end
 
-    -- Initialize persistent data
-    timer.Simple(0.1, function() -- Just to make sure "DROP TABLE SEv;" doesn't conflict here for some reason. idk if it's needed
-        SHL:InitSEvSQL()
-    end)
+    -- Get the persistent data
+    if file.Exists(SEVInfoFile, "DATA") then
+        sandevInfo = util.JSONToTable(file.Read(SEVInfoFile, "Data"))
+    end
 
     -- Get the server state and start the hotload
     if CLIENT then
@@ -845,7 +850,7 @@ end
 
 -- Restore addon info and state after a map changelevel
 if SEv then
-    local addonInfo = SHL:GetAddonInfoFromSQL()
+    local addonInfo = SHL:GetStoredAddonInfo()
     SHL:AddAddonInfo(addonInfo)
     isSEvMounted = true
 end
