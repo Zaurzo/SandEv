@@ -102,3 +102,38 @@ function SEv.Util:BlockDirectLibCalls(lib)
         end
     })
 end
+
+--Teb's strange Data Conversion system.
+function SEv.Util:ConvertData(any, Output)
+    Output = Output or false
+    local Value = nil
+
+    if Output then
+        print("Uncompiled Data: ", tostring(any))
+    end
+
+    if isnumber(any) then
+        -- We know it is a int.
+        Value = tonumber(any)
+    elseif any == ("true" or "false") then
+        -- We know it is a Bool.
+        Value = tobool(any)
+    elseif string.find(any, "^[%s]-[{]") then
+        -- We know it is a table.
+        Value = CompileString([[return ]]..any, "tblstr")()
+    else
+        -- We know it is a string.
+        Value = tostring(any) -- for extra mesure.
+    end
+
+    if Output then
+        if string.find(tostring(any), "^[%s]-[{]") then
+            print("Compiled Table: ")
+            PrintTable(Value)
+        else
+            print("Compiled Data: ", tostring(Value))
+        end
+    end
+
+    return Value
+end

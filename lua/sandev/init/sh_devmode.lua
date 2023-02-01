@@ -10,47 +10,7 @@ function SEv:AddDevModeToBase(base)
         concommand.Add(base.id .. "_memories_toggle_per_player", function(ply, cmd, args) base.Event.Memory:TogglePerPlayer(ply, cmd, args) end)
         concommand.Add(base.id .. "_memories_list", function() base.Event.Memory:List() end)
         concommand.Add(base.id .. "_memories_print_logic", function() base.Event.Memory.Dependency:PrintLogic() end)
-        concommand.Add(base.id .. "_memories_set", function(ply, cmd, args) --TODO: Move this to something else.
-            print("Player: ", ply)
-            print("CMD: ", cmd)
-            if string.find(args[2], "^[%s]-[{]") then
-                print("Compiled Table: ")
-                PrintTable(args[2])
-            else
-                print("Compiled Data: ", tostring(args[2]))
-            end
-
-            local function StringToTable(tblstr)
-                return CompileString('return ' .. tblstr)()
-            end
-
-            if isnumber(args[2]) then --TODO: Mabye place this in SEv.Util?
-                -- We know it is a int.
-                args[2] = tonumber(args[2])
-            elseif args[2] == ("true" or "false") then
-                -- We know it is a Bool.
-                args[2] = tobool(args[2])
-            elseif string.find(args[2], "^[%s]-[{]") then
-                -- We know it is a table.
-
-                local ConvertedStr = StringToTable(args[2])--CompileString("return " .. args[2] .. "", "SrtToTable")()
-                --PrintTable(CompileString("function SrtToTable() return " .. args[2] .. " end SrtToTable()", "SrtToTable")())
-                --PrintTable(CompileString('return ' .. tostring("function() return " .. args[2] .. " end")))--args[3]), "SrtToTable"))
-                args[2] = ConvertedStr
-            else
-                -- We know it is a string.
-                args[2] = tostring(args[2]) -- for extra mesure.
-            end
-
-            if string.find(args[2], "^[%s]-[{]") then
-                print("Compiled Table: ")
-                PrintTable(args[2])
-            else
-                print("Compiled Data: ", tostring(args[2]))
-            end
-
-            --base.Event.Memory.SetCommand(args[1], args[2])
-        end)
+        concommand.Add(base.id .. "_memories_set", function(ply, cmd, args) local ConvertedData = SEv.Util:ConvertData(tostring(args[2])) base.Event.Memory:Set(args[1], args[2]) end)
 
         if CLIENT then
             net.Start(base.id .. "_event_request_all_render_sv")
