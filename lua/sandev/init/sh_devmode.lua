@@ -10,6 +10,35 @@ function SEv:AddDevModeToBase(base)
         concommand.Add(base.id .. "_memories_toggle_per_player", function(ply, cmd, args) base.Event.Memory:TogglePerPlayer(ply, cmd, args) end)
         concommand.Add(base.id .. "_memories_list", function() base.Event.Memory:List() end)
         concommand.Add(base.id .. "_memories_print_logic", function() base.Event.Memory.Dependency:PrintLogic() end)
+        concommand.Add(base.id .. "_memories_set", function(ply, cmd, args)
+            print(ply)
+            print(cmd)
+            PrintTable(args)
+
+            if isnumber(args[2]) then
+                -- We know it is a int.
+                args[2] = tonumber(args[2])
+            elseif args[2] == ("true" or "false") then
+                -- We know it is a Bool.
+                args[2] = tobool(args[2])
+            elseif string.find(args[2], "^[%s]-[{]") then
+                -- We know it is a table.
+
+                local thing = CompileString("function SrtToTable() return " .. args[2] .. " end SrtToTable()", "SrtToTable")()
+                --PrintTable(CompileString("function SrtToTable() return " .. args[2] .. " end SrtToTable()", "SrtToTable")())
+                if string.find(args[2], "^[%s]-[{]") then
+                    PrintTable(thing)
+                else
+                    print(thing)
+                end
+                --PrintTable(CompileString('return ' .. tostring("function() return " .. args[2] .. " end")))--args[3]), "SrtToTable"))
+            else
+                args[2] = tostring(args[2]) -- for extra mesure.
+                -- We know it is a string.
+            end
+
+            base.Event.Memory.SetCommand(args[1], args[2])
+        end)
 
         if CLIENT then
             net.Start(base.id .. "_event_request_all_render_sv")
@@ -38,6 +67,7 @@ function SEv:AddDevModeToBase(base)
         concommand.Remove(base.id .. "_memories_toggle")
         concommand.Remove(base.id .. "_memories_list")
         concommand.Remove(base.id .. "_memories_print_logic")
+        concommand.Remove(base.id .. "_memories_set")
 
         if CLIENT then
             concommand.Remove(base.id .. "_events_render")
