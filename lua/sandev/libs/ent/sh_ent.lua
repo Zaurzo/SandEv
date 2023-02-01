@@ -249,6 +249,12 @@ end
 -- See /base/addon/entinfo
 
 function SEv.Ent:IsInfoHidden(ent)
+    if not ent then return false end -- Got a strange bug.
+    --[[
+[sandev] addons/sandev/lua/sandev/libs/ent/sh_ent.lua:256: attempt to index local 'ent' (a nil value)
+  1. HideInfo - addons/sandev/lua/sandev/libs/ent/sh_ent.lua:256
+   2. unknown - addons/gm_construct_13-beta/lua/entities/gm13_mingebag/cl_init.lua:28
+]]
     return ent:GetNWBool("sev_cover_ent_name") and true
 end
 
