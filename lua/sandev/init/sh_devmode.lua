@@ -10,10 +10,18 @@ function SEv:AddDevModeToBase(base)
         concommand.Add(base.id .. "_memories_toggle_per_player", function(ply, cmd, args) base.Event.Memory:TogglePerPlayer(ply, cmd, args) end)
         concommand.Add(base.id .. "_memories_list", function() base.Event.Memory:List() end)
         concommand.Add(base.id .. "_memories_print_logic", function() base.Event.Memory.Dependency:PrintLogic() end)
-        concommand.Add(base.id .. "_memories_set", function(ply, cmd, args)
+        concommand.Add(base.id .. "_memories_set", function(ply, cmd, args) --TODO: Move this to something else.
             print(ply)
             print(cmd)
-            PrintTable(args)
+            if string.find(args[2], "^[%s]-[{]") then
+                PrintTable(thing)
+            else
+                print(thing)
+            end
+
+            local function StringToTable(tblstr)
+                return CompileString('return ' .. tblstr)()
+            end
 
             if isnumber(args[2]) then
                 -- We know it is a int.
@@ -24,12 +32,12 @@ function SEv:AddDevModeToBase(base)
             elseif string.find(args[2], "^[%s]-[{]") then
                 -- We know it is a table.
 
-                local thing = CompileString("function SrtToTable() return " .. args[2] .. " end SrtToTable()", "SrtToTable")()
+                local ConvertedStr = StringToTable(args[2])--CompileString("return " .. args[2] .. "", "SrtToTable")()
                 --PrintTable(CompileString("function SrtToTable() return " .. args[2] .. " end SrtToTable()", "SrtToTable")())
                 if string.find(args[2], "^[%s]-[{]") then
-                    PrintTable(thing)
+                    PrintTable(ConvertedStr)
                 else
-                    print(thing)
+                    print(ConvertedStr)
                 end
                 --PrintTable(CompileString('return ' .. tostring("function() return " .. args[2] .. " end")))--args[3]), "SrtToTable"))
             else
@@ -37,7 +45,7 @@ function SEv:AddDevModeToBase(base)
                 -- We know it is a string.
             end
 
-            base.Event.Memory.SetCommand(args[1], args[2])
+            --base.Event.Memory.SetCommand(args[1], args[2])
         end)
 
         if CLIENT then
