@@ -22,7 +22,7 @@ function SEv:AddDevModeToBase(base)
         concommand.Add(base.id .. "_memories_toggle_per_player", function(ply, cmd, args) base.Event.Memory:TogglePerPlayer(ply, cmd, args) end)
         concommand.Add(base.id .. "_memories_list", function() base.Event.Memory:List() end)
         concommand.Add(base.id .. "_memories_print_logic", function() base.Event.Memory.Dependency:PrintLogic() end)
-        concommand.Add(base.id .. "_memories_set", function(ply, cmd, args) base.Event.Memory:Set(args[1], ConvertCVarDataToMemory(tostring(args[2]))) end)
+        concommand.Add(base.id .. "_memories_set", function(ply, cmd, args) base.Event.Memory:Set(args[1], ConvertCVarDataToMemory(args[2])) end)
 
         if CLIENT then
             net.Start(base.id .. "_event_request_all_render_sv")
