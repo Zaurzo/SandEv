@@ -401,12 +401,15 @@ function SHL:HotloadTools()
 end
 
 function SHL:HotloadSEv()
+    -- Note: WSHL_* vars are workarounds to solve Midgame Workshop Hotloader conflicts
+    -- Zaurzo added them while he's rewriting his tool so we can coexist right now
+
     local detourCLIncludeOnSingleplayer = true
 
     -- Add temporary detours
 
     -- AddCSLuaFile: helps to debug
-    AddCSLuaFileOriginal = AddCSLuaFileOriginal or _G.AddCSLuaFile
+    AddCSLuaFileOriginal = AddCSLuaFileOriginal or WSHL_AddCSLuaFile or AddCSLuaFile
     function AddCSLuaFile(path)
         if CLIENT then return end
 
@@ -426,7 +429,7 @@ function SHL:HotloadSEv()
     end
 
     -- Include: helps to debug and workarounds the CLIENT include datapack issue
-    includeOriginal = includeOriginal or _G.include
+    includeOriginal = includeOriginal or WSHL_include or include
     function include(path)
         if not file.Exists(path, "LUA") or not string.find(path, "([\\/]+)") then
             local fixedPath = string.GetPathFromFilename(debug.getinfo(2).source) .. path
