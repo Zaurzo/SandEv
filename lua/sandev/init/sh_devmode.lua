@@ -4,12 +4,25 @@ function SEv:AddDevModeToBase(base)
     function base:EnableDevMode()
         base.devMode = true
 
+        local function ConvertCVarDataToMemory(any)
+            if isnumber(any) then
+                any = tonumber(any)
+            elseif any == ("true" or "false") then
+                any = tobool(any)
+            elseif string.find(any, "^[%s]-[{]") then
+                any = CompileString([[return ]] .. any, "sev_tblstr")()
+            end
+        
+            return any
+        end
+
         concommand.Add(base.id .. "_events_toggle", function(ply, cmd, args) base.Event:Toggle(ply, cmd, args) end)
         concommand.Add(base.id .. "_events_list", function() base.Event:List() end)
         concommand.Add(base.id .. "_memories_toggle", function(ply, cmd, args) base.Event.Memory:Toggle(ply, cmd, args) end)
         concommand.Add(base.id .. "_memories_toggle_per_player", function(ply, cmd, args) base.Event.Memory:TogglePerPlayer(ply, cmd, args) end)
         concommand.Add(base.id .. "_memories_list", function() base.Event.Memory:List() end)
         concommand.Add(base.id .. "_memories_print_logic", function() base.Event.Memory.Dependency:PrintLogic() end)
+        concommand.Add(base.id .. "_memories_set", function(ply, cmd, args) base.Event.Memory:Set(args[1], ConvertCVarDataToMemory(args[2])) end)
 
         if CLIENT then
             net.Start(base.id .. "_event_request_all_render_sv")
@@ -38,6 +51,7 @@ function SEv:AddDevModeToBase(base)
         concommand.Remove(base.id .. "_memories_toggle")
         concommand.Remove(base.id .. "_memories_list")
         concommand.Remove(base.id .. "_memories_print_logic")
+        concommand.Remove(base.id .. "_memories_set")
 
         if CLIENT then
             concommand.Remove(base.id .. "_events_render")

@@ -249,6 +249,7 @@ end
 -- See /base/addon/entinfo
 
 function SEv.Ent:IsInfoHidden(ent)
+    if not IsValid(ent) then return false end
     return ent:GetNWBool("sev_cover_ent_name") and true
 end
 
