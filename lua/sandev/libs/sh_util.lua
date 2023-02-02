@@ -103,37 +103,21 @@ function SEv.Util:BlockDirectLibCalls(lib)
     })
 end
 
---Teb's strange Data Conversion system.
-function SEv.Util:ConvertData(any, Output)
-    Output = Output or false
-    local Value = nil
 
-    if Output then
-        print("Uncompiled Data: ", tostring(any))
-    end
-
+--Teb's cvar to memory conversion
+function SEv.Util:ConvertData(any)
     if isnumber(any) then
-        -- We know it is a int.
-        Value = tonumber(any)
+        -- It's a number.
+        any = tonumber(any)
     elseif any == ("true" or "false") then
-        -- We know it is a Bool.
-        Value = tobool(any)
+        -- It's a boolean
+        any = tobool(any)
     elseif string.find(any, "^[%s]-[{]") then
-        -- We know it is a table.
-        Value = CompileString([[return ]]..any, "tblstr")()
+        -- It's a table.
+        any = CompileString([[return ]] .. any, "sev_tblstr")()
     else
-        -- We know it is a string.
-        Value = tostring(any) -- for extra mesure.
+        -- It's a string.
     end
 
-    if Output then
-        if string.find(tostring(any), "^[%s]-[{]") then
-            print("Compiled Table: ")
-            PrintTable(Value)
-        else
-            print("Compiled Data: ", tostring(Value))
-        end
-    end
-
-    return Value
+    return any
 end
