@@ -102,22 +102,3 @@ function SEv.Util:BlockDirectLibCalls(lib)
         end
     })
 end
-
-
---Teb's cvar to memory conversion
-function SEv.Util:ConvertData(any)
-    if isnumber(any) then
-        -- It's a number.
-        any = tonumber(any)
-    elseif any == ("true" or "false") then
-        -- It's a boolean
-        any = tobool(any)
-    elseif string.find(any, "^[%s]-[{]") then
-        -- It's a table.
-        any = CompileString([[return ]] .. any, "sev_tblstr")()
-    else
-        -- It's a string.
-    end
-
-    return any
-end
