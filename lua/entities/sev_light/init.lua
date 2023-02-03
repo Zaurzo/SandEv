@@ -35,11 +35,11 @@ function ENT:SetOn(state)
 end
 
 function ENT:GetOn()
-    self:GetNWBool("state")
+    return self:GetNWBool("state")
 end
 
 function ENT:GetBrightness()
-    self:GetNWInt("brightness")
+    return self:GetNWInt("brightness")
 end
 
 function ENT:SetBrightness(brightness)
