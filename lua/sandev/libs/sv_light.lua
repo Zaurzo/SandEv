@@ -229,3 +229,73 @@ function SEv.Light:Blink(ent, maxTime, finalState, callbackOn, callbackOff, call
 
     return true
 end
+
+-- Use "." for a dit, "-" for a dah, " " between characters and " / " between words
+-- (Generator: https://morsecode.world/international/translator.html)
+-- Timing (https://morsecode.world/international/timing.html):
+    -- Dit: 1 unit
+    -- Dah: 3 units
+    -- Intra-character space (the gap between dits and dahs within a character): 1 unit
+    -- Inter-character space (the gap between the characters of a word): 3 units
+    -- Word space (the gap between two words): 7 units
+function SEv.Light:StartMorse(ent, unit, message)
+    if not isstring(message) then return end
+
+    message = string.gsub(message, "%s+", " ")
+    message = string.ToTable(string.Trim(message))
+
+    if not next(message) then return end
+
+    local pos = 1
+    local TurnOnLight, TurnOffLight
+
+    -- Turn on the light
+    function TurnOnLight()
+        if not IsValid(ent) then return end
+
+        if message[pos] == "." then
+            SEv.Light:SetOn(ent)
+            timer.Simple(unit, TurnOffLight)
+        elseif message[pos] == "-" then
+            SEv.Light:SetOn(ent)
+            timer.Simple(unit * 3, TurnOffLight)
+        else
+            TurnOffLight() -- This shouldn't be called in well-written morse code
+        end
+    end
+
+    -- Turn off the light
+    local lastChar
+    local curChar
+    function TurnOffLight()
+        if not IsValid(ent) then return end
+
+        if SEv.Light:IsOn(ent) then
+            SEv.Light:SetOff(ent)
+        end
+
+        pos = pos + 1
+
+        lastChar = message[pos - 1]
+        curChar = message[pos]
+
+        if not curChar then return end
+
+        -- Intra-character space (the gap between dits and dahs within a character): 1 unit
+        if (lastChar == "." or lastChar == "-") and (curChar == "." or curChar == "-") then
+            timer.Simple(unit, TurnOnLight)
+        -- Inter-character space (the gap between the characters of a word): 3 units
+        elseif curChar == " " then
+            timer.Simple(unit * 3, TurnOffLight)
+        -- Word space (the gap between two words): 7 units
+        --     Note: I'm using " " + "/" + " " between words, so it's 3 units + 1 unit + 3 units = 7 units
+        elseif message[pos] == "/" then
+            timer.Simple(unit, TurnOffLight)
+        -- Returning to "." or "-"
+        else
+            TurnOffLight()
+        end
+    end
+
+    TurnOnLight()
+end
