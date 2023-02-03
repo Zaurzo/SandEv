@@ -293,7 +293,7 @@ function SEv.Light:StartMorse(ent, unit, message)
             timer.Simple(unit, TurnOffLight)
         -- Returning to "." or "-"
         else
-            TurnOffLight()
+            TurnOnLight()
         end
     end
 
