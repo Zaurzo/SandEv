@@ -148,6 +148,33 @@ net.Receive("hotloader_net_send_string", function()
     end
 end)
 
+-- Get gma title, which is used as the mounted addon folder name on the root gmod dir
+--   Src: https://github.com/Facepunch/gmad/blob/master/src/create_gmad.cpp#L60
+--   Thanks to https://github.com/Facepunch/garrysmod-issues/issues/5143 and Zaurzo for the help
+--   I also implemented the function SEv.Workshop:GetGMAInfo() to read the entire gma
+local function GetGMATitle(gma)
+    if gma:Read(4) ~= "GMAD" then return end
+
+    -- Version (1)
+    -- SteamID, unnused (8)
+    -- Timestamp (8)
+    gma:Skip(17)
+
+    -- Required content, probably unnused
+    while not gma:EndOfFile() and gma:Read(1) ~= '\0' do end
+
+    -- Title
+    local title = {}
+    while not gma:EndOfFile() do
+        local char = gma:Read(1)
+        if char == '\0' then break end
+        title[#title + 1] = char
+    end
+    title = table.concat(title)
+
+    return title
+end
+
 -- ------------------------------------------------------------------------
 -- The hotloader
 -- ------------------------------------------------------------------------
@@ -230,11 +257,11 @@ function SHL:AddAddonInfo(addonInfo)
 end
 
 -- Load an entity
-function SHL:HotloadEntity(_type, objName, entBase, entClass, filename)
+function SHL:HotloadEntity(luaFolder, objName, entBase, entClass, filename)
     _G[objName] = {}
-    _G[objName].Folder = _type .. "/" .. entClass
+    _G[objName].Folder = luaFolder .. "/" .. entClass
 
-    if _type == "weapons" then
+    if luaFolder == "weapons" then
         _G[objName].Primary = {}
         _G[objName].Secondary = {}
     end
@@ -242,8 +269,8 @@ function SHL:HotloadEntity(_type, objName, entBase, entClass, filename)
     local filesIncluded = false
 
     if isstring(filename) then
-        AddCSLuaFile(_type .. "/" .. filename)
-        include(_type .. "/" .. filename)
+        AddCSLuaFile(luaFolder .. "/" .. filename)
+        include(luaFolder .. "/" .. filename)
         filesIncluded = true
     else
         if SERVER then
@@ -275,8 +302,8 @@ function SHL:HotloadEntity(_type, objName, entBase, entClass, filename)
 end
 
 -- Load new sents and sweps
-function SHL:HotloadEntities(_type, objName, entBase)
-    local files, dirs = file.Find(_type .. "/*", "LUA")
+function SHL:HotloadEntities(gmaTitle, luaFolder, objName, entBase)
+    local files, dirs = file.Find("lua/" .. luaFolder .. "/*", gmaTitle)
 
     -- Check for unregistered entities
 
@@ -286,7 +313,7 @@ function SHL:HotloadEntities(_type, objName, entBase)
 
         -- Register new entities
         if not entBase.GetStored(entClass) then
-            SHL:HotloadEntity(_type, objName, entBase, entClass, filename)
+            SHL:HotloadEntity(luaFolder, objName, entBase, entClass, filename)
         end
     end
 
@@ -294,10 +321,10 @@ function SHL:HotloadEntities(_type, objName, entBase)
     for k, entClass in ipairs(dirs) do
         -- Register new entities
         if entClass ~= "gmod_tool" and not entBase.GetStored(entClass) then
-            if file.Exists(_type .. "/" .. entClass .. "/init.lua", "LUA") or 
-                file.Exists(_type .. "/" .. entClass .. "/cl_init.lua", "LUA")
+            if file.Exists(luaFolder .. "/" .. entClass .. "/init.lua", "LUA") or 
+                file.Exists(luaFolder .. "/" .. entClass .. "/cl_init.lua", "LUA")
                 then
-                SHL:HotloadEntity(_type, objName, entBase, entClass, filename)
+                SHL:HotloadEntity(luaFolder, objName, entBase, entClass, filename)
             end
         end
     end
@@ -320,11 +347,11 @@ end
                 and end up with fully working addons. These replacements are only necessary in multiplayer, but I also do them in singleplayer to avoid
                 warning messages about datapack inconsistencies. -- Xala
 ]]
-function SHL:HotloadTools()
+function SHL:HotloadTools(gmaTitle)
     SWEP = baseclass.Get('gmod_tool')
     toolObj = getmetatable(SWEP.Tool["axis"])
 
-    local toolModes = file.Find("weapons/gmod_tool/stools/*.lua", "LUA")
+    local toolModes = file.Find("lua/weapons/gmod_tool/stools/*.lua", gmaTitle)
     local foundToolsToMount = false
 
     -- Check for unregistered tools
@@ -400,7 +427,7 @@ function SHL:HotloadTools()
     end
 end
 
-function SHL:HotloadSEv()
+function SHL:HotloadSEv(gmaTitle)
     -- Note: WSHL_* vars are workarounds to solve Midgame Workshop Hotloader conflicts
     -- Zaurzo added them while he's rewriting his tool so we can coexist right now
 
@@ -467,13 +494,13 @@ function SHL:HotloadSEv()
     include(SEVInitFile)
 
     -- Load new scripted weapons
-    SHL:HotloadEntities("weapons", "SWEP", weapons)
+    SHL:HotloadEntities(gmaTitle, "weapons", "SWEP", weapons)
 
     -- Load new tools
-    SHL:HotloadTools()
+    SHL:HotloadTools(gmaTitle)
 
     -- Load new scripted entities
-    SHL:HotloadEntities("entities", "ENT", scripted_ents)
+    SHL:HotloadEntities(gmaTitle, "entities", "ENT", scripted_ents)
 
     -- At this point SandEv is fully mounted
     isSEvMounted = true
@@ -549,6 +576,7 @@ function SHL:MountSEv(path)
 
     -- Mount files
     local isMounted, files = game.MountGMA(path)
+    local gmaTitle = GetGMATitle(file.Open(path, "rb", "GAME"))
 
     if not isMounted then
         print("Error trying to hotload sandev")
@@ -568,7 +596,7 @@ function SHL:MountSEv(path)
 
         -- If so, start the hotloading process
         if mountedFiles == #files or retries == 0 then
-            SHL:HotloadSEv()
+            SHL:HotloadSEv(gmaTitle)
 
             if SERVER then
                 net.Start("sev_mount")
