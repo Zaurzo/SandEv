@@ -380,7 +380,13 @@ hook.Add("InitPostEntity", "sev_init", function()
 
         -- Copy the Log lib
         if base.enableLogging then
+            local override = base.Log
+
             base.Log = table.Copy(SEv.Log)
+
+            if override then
+                table.Merge(base.Log, override)
+            end
         end
 
         -- Add devMode
@@ -413,13 +419,21 @@ hook.Add("InitPostEntity", "sev_init", function()
 
         -- Initialize custom lobby systems
         if base.enableLobby then
+            local override = base.Lobby
+
             base.Lobby = table.Copy(SEv.Lobby)
 
             base.Lobby.base = base
+
+            if override then
+                table.Merge(base.Lobby, override)
+            end
         end
 
         -- Initialize custom event systems
         if base.enableEvents then
+            local override = base.Event
+
             base.Event = table.Copy(SEv.Event)
 
             base.Event.base = base
@@ -447,6 +461,10 @@ hook.Add("InitPostEntity", "sev_init", function()
             if SERVER then
                 base.Event.Memory:Load()
                 base.Event:InitializeTier()
+            end
+
+            if override then
+                table.Merge(base.Event, override)
             end
 
             -- Send the server memories at the appropriate time
