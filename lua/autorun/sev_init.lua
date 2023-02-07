@@ -66,7 +66,8 @@
             url = string server url,
             patterns = { string pattern },                   -- Usually a folder name from /lua
         },
-        enableLobby = boolean enable                         -- Append a copy of the lobby system as BASE.Lobby
+        enableLogging = boolean enable,                      -- Append a copy of logging system as BASE.Log
+        enableLobby = boolean enable,                        -- Append a copy of the lobby system as BASE.Lobby
         enableEvents = boolean enable                        -- Append a copy of the events system as BASE.Event, BASE.Event.Memory,
                                                              -- BASE.Event.Memory.Incompatibility and BASE.Event.Memory.Dependency
     }
@@ -141,6 +142,10 @@ SEv = SEv or {
     },
     Light = {},
     Lobby = {},
+    Log = {
+        enabled = false, -- Enable / disable log messages
+        debugAll = false -- Turn it on to see all the debug messages
+    },
     Map = {
         nodesFolder = "nodes",
         nodesCacheFilename = game.GetMap() .. "_nodes.txt", -- File to save the map node positions
@@ -373,6 +378,11 @@ hook.Add("InitPostEntity", "sev_init", function()
             SEv:AddBaseNets(base)
         end
 
+        -- Copy the Log lib
+        if base.enableLogging then
+            base.Log = table.Copy(SEv.Log)
+        end
+
         -- Add devMode
         SEv:AddDevModeToBase(base)
 
@@ -469,7 +479,8 @@ hook.Add("InitPostEntity", "sev_init", function()
         end
     end
 
-    -- Lock down some libs (only after they were copied!!)
+    -- Lock down some libs after we're done copying them to bases
+    SEv.Util:BlockDirectLibCalls(SEv.Log)
     SEv.Util:BlockDirectLibCalls(SEv.Lobby)
     SEv.Util:BlockDirectLibCalls(SEv.Event)
     SEv.Util:BlockDirectLibCalls(SEv.Event.Memory)

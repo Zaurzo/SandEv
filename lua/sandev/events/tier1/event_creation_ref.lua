@@ -29,6 +29,9 @@ local eventName = "myEvent"
 -- Set some variables that are kept when the map is cleared
 local saved = false
 
+-- This is an extra variable that will be used by BASE.Log:Debug
+local DEBUG = true
+
 -- Set some memory dependencies. An event can provide or request memories
 -- When a memory is provided, events that require this memory are automatically loaded
 BASE.Event.Memory.Dependency:SetProvider(eventName, "myMemory1", "myMemory2", ...)
@@ -84,6 +87,13 @@ local function CreateEvent()
     SEv.Ply:CallOnSpawn(ply, isOnce, callback, ...)
     SEv.Vehicle:Break(vehicle, value)
     -- And many more
+
+    -- Print some log messages
+    BASE.Log:Debug(DEBUG, "debug")
+    BASE.Log:Info("info")
+    BASE.Log:Warning("warning")
+    BASE.Log:Error("error")
+    BASE.Log:Critical("critical")
 
     -- A common thing in events are triggers, so create and populate them here. E.G.
     local someTrigger = ents.Create("sev_trigger")
