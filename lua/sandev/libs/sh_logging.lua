@@ -1,6 +1,6 @@
 -- This custom MsgC will fix color code printing for linux SRCDS
 -- SRCDS on linux doesn't support 256 color mode
--- So we have to detour MSGC and replace it for the available ones.
+-- So we have to replace it for the available ones.
 --   Note: despite my modifications this color fix was given to me by a friend a long time ago - Xala
 
 local colorMap = {
