@@ -3,7 +3,7 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-function ENT:Setup(base, eventName, entName, vec, r, g, b, brightness, decay, size)
+function ENT:Setup(base, eventName, entName, vec, color, decay, size)
     self:Spawn()
 
     local vecA = vec + Vector(10, 10, 10)
@@ -18,10 +18,10 @@ function ENT:Setup(base, eventName, entName, vec, r, g, b, brightness, decay, si
 
     self:SetPos(vec)
 
-    self:SetNWInt("r", r)
-    self:SetNWInt("g", g)
-    self:SetNWInt("b", b)
-    self:SetNWInt("brightness", brightness)
+    self:SetNWInt("r", color.r)
+    self:SetNWInt("g", color.g)
+    self:SetNWInt("b", color.b)
+    self:SetNWInt("brightness", color.brightness)
     self:SetNWInt("decay", decay)
     self:SetNWInt("size", size)
 
