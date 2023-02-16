@@ -23,7 +23,7 @@ end
 -- Check if the event is incompatible with the loaded memories
 function SEv.Event.Memory.Incompatibility:Check(eventName)
     if self.list[eventName] then
-        for memoryName, memoryValue in pairs(self.base.Event.Memory:GetList()) do
+        for memoryName, memoryValue in pairs(self.instance.Event.Memory:GetList()) do
             if self.list[eventName][memoryName] then
                 return true
             end

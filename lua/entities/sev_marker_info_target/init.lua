@@ -3,7 +3,7 @@
 ENT.Base = "base_entity"
 ENT.Type = "brush"
 
-function ENT:Setup(base, eventName, entName, vec, vecConnection)
+function ENT:Setup(instance, eventName, entName, vec, vecConnection)
     self:Spawn()
 
     local vecA = vec + Vector(5, 5, 10)
@@ -22,5 +22,5 @@ function ENT:Setup(base, eventName, entName, vec, vecConnection)
 
     self:SetSolid(FSOLID_NOT_SOLID)
 
-    base.Event:SetRenderInfoEntity(self)
+    instance.Event:SetRenderInfoEntity(self)
 end

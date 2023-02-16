@@ -3,7 +3,7 @@
 ENT.Base = "base_entity"
 ENT.Type = "brush"
 
-function ENT:Setup(base, eventName, entName, vec)
+function ENT:Setup(instance, eventName, entName, vec)
     self:Spawn()
 
     self:SetVar("eventName", eventName)
@@ -17,5 +17,5 @@ function ENT:Setup(base, eventName, entName, vec)
     self:SetName(entName)
     self:SetPos(vec)
 
-    base.Event:SetRenderInfoEntity(self)
+    instance.Event:SetRenderInfoEntity(self)
 end

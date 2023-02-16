@@ -2,7 +2,7 @@
 
 -- Send all custom events to a player or all players
 function SEv.Event:SendCustomEnts(ply)
-    if not self.base.devMode then return end
+    if not self.instance.devMode then return end
 
     local sendTab = {}
     local currentChunksID = tostring(sendTab)
@@ -35,7 +35,7 @@ function SEv.Event:SendCustomEnts(ply)
 
             local isLastChunk = i == totalChunks
 
-            net.Start(self.base.id .. "_event_send_all_render_cl")
+            net.Start(self.instance.id .. "_event_send_all_render_cl")
             net.WriteString(currentChunksID)
             net.WriteUInt(#chunk, 16)
             net.WriteData(chunk, #chunk)
@@ -61,18 +61,18 @@ function SEv.Event:ChangeTier(oldTier, newTier, forceNewTier)
     oldTier = tonumber(oldTier)
     newTier = tonumber(newTier)
 
-    if not isnumber(newTier) or (newTier ~= math.floor(newTier)) or not (forceNewTier or self.base.devMode) and (newTier < 1 or newTier > 4) then
+    if not isnumber(newTier) or (newTier ~= math.floor(newTier)) or not (forceNewTier or self.instance.devMode) and (newTier < 1 or newTier > 4) then
         undoingInvalidTier = true
-        RunConsoleCommand(self.base.id .. "_tier", oldTier)
+        RunConsoleCommand(self.instance.id .. "_tier", oldTier)
         print("Invalid tier. Choose between 1 and 4.")
 
         return
     end
 
     if oldTier ~= newTier or forceNewTier then
-        if not (forceNewTier or self.base.devMode) and newTier > maxTier then
+        if not (forceNewTier or self.instance.devMode) and newTier > maxTier then
             undoingInvalidTier = true
-            RunConsoleCommand(self.base.id .. "_tier", oldTier)
+            RunConsoleCommand(self.instance.id .. "_tier", oldTier)
             print("Sorry, not enough power to increase the tier.")
     
             return
@@ -91,9 +91,9 @@ function SEv.Event:Reset()
     SEv.Map:BlockCleanup(false)
     self:RemoveAll()
     self.Memory:Reset()
-    hook.Run(self.base.id .. "_reset")
+    hook.Run(self.instance.id .. "_reset")
 
-    local pesistentFolder = self.base.dataFolder .. "/persistent"
+    local pesistentFolder = self.instance.dataFolder .. "/persistent"
     if file.Exists(pesistentFolder, "DATA") then
         local files, dirs = file.Find(pesistentFolder .. "/*", "DATA")
 
@@ -106,37 +106,37 @@ function SEv.Event:Reset()
         game.CleanUpMap()
 
         timer.Simple(1, function()
-            tier = GetConVar(self.base.id .. "_tier"):GetInt(1)
+            tier = GetConVar(self.instance.id .. "_tier"):GetInt(1)
 
             if tier == 1 then
                 self:ChangeTier(1, 1, true)
             else
-                GetConVar(self.base.id .. "_tier"):SetInt(1)
+                GetConVar(self.instance.id .. "_tier"):SetInt(1)
             end
         end)
     end)
 end
 
--- Base init
-function SEv.Event:InitSv(base)
+-- Instance init
+function SEv.Event:InitSv(instance)
     -- New players, devMode: ask for entities information to enable rendering their areas
-    net.Receive(base.id .. "_event_request_all_render_sv", function(len, ply)
-        base.Event:SendCustomEnts(ply)
+    net.Receive(instance.id .. "_event_request_all_render_sv", function(len, ply)
+        instance.Event:SendCustomEnts(ply)
     end)
 
     -- Cvar callbacks
-    cvars.AddChangeCallback(base.id .. "_tier", function(cvarName, oldTier, newTier)
-        base.Event:ChangeTier(oldTier, newTier)
+    cvars.AddChangeCallback(instance.id .. "_tier", function(cvarName, oldTier, newTier)
+        instance.Event:ChangeTier(oldTier, newTier)
     end)
 
-    concommand.Add(base.id .. "_reset", function(ply, cmd, args)
+    concommand.Add(instance.id .. "_reset", function(ply, cmd, args)
         if args[1] ~= "yes" then
-            print("If you want to force the map back to its initial state, type \"" .. base.id .. "_reset yes\".")
+            print("If you want to force the map back to its initial state, type \"" .. instance.id .. "_reset yes\".")
         else
-            base.Event:Reset()
+            instance.Event:Reset()
             print("The map has been deeply cleaned, but restart it if you find any remains.")
         end
     end)
 
-    base.Event.InitSv = nil
+    instance.Event.InitSv = nil
 end

@@ -5,8 +5,8 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-function ENT:Setup(base, eventName, entName, vecA, vecB, hasPhysics, useType, modelName, callback, ...)
-    self.base = base
+function ENT:Setup(instance, eventName, entName, vecA, vecB, hasPhysics, useType, modelName, callback, ...)
+    self.instance = instance
     self:Spawn()
 
     local vecDiff = (vecA - vecB)/2
@@ -44,7 +44,7 @@ function ENT:Setup(base, eventName, entName, vecA, vecB, hasPhysics, useType, mo
 
     SEv.Ent:SetCursed(self, true)
 
-    base.Event:SetRenderInfoEntity(self)
+    instance.Event:SetRenderInfoEntity(self)
 end
 
 function ENT:PhysicsCollide(data, phys)
@@ -52,7 +52,7 @@ function ENT:PhysicsCollide(data, phys)
     self:SetVar("vecA", self:GetPos() + self:GetVar("vecDiff"))
     self:SetVar("vecB", self:GetPos() - self:GetVar("vecDiff"))
 
-    self.base.Event:SetRenderInfoEntity(self)
+    self.instance.Event:SetRenderInfoEntity(self)
 end
 
 function ENT:Use(activator)

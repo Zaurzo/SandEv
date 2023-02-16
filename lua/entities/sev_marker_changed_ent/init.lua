@@ -3,7 +3,7 @@
 ENT.Base = "base_entity"
 ENT.Type = "brush"
 
-function ENT:Setup(base, eventName, entName, vecA, vecB)
+function ENT:Setup(instance, eventName, entName, vecA, vecB)
     self:Spawn()
 
     self:SetVar("eventName", eventName)
@@ -16,5 +16,5 @@ function ENT:Setup(base, eventName, entName, vecA, vecB)
     self:SetSolidFlags(FSOLID_NOT_SOLID)
     self:SetName(entName)
 
-    base.Event:SetRenderInfoEntity(self)
+    instance.Event:SetRenderInfoEntity(self)
 end

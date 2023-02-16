@@ -26,7 +26,7 @@ function SEv.Event.Memory:SendAllMemories(ply)
         end
     end
 
-    net.Start(self.base.id .. "_broadcast_memories")
+    net.Start(self.instance.id .. "_broadcast_memories")
     net.WriteTable(memoriesTab)
     net.Send(ply)
 end
@@ -76,14 +76,14 @@ function SEv.Event.Memory:Toggle(ply, cmd, args, doNotRefreshEvents, isPerPlayer
         for memoryName, memoryValue in pairs(self.list) do
             swapValue(memoryName, true)
         end
-        self.base.Event:ReloadByMemory()
+        self.instance.Event:ReloadByMemory()
 
         print("Done")
     elseif memoryNameIn == "disabled" then
         for memoryName, memoryValue in pairs(self.swaped) do
             swapValue(memoryName, true)
         end
-        self.base.Event:ReloadByMemory()
+        self.instance.Event:ReloadByMemory()
 
         print("Done")
     elseif self.list[memoryNameIn] ~= nil or self.swaped[memoryNameIn] ~= nil then
@@ -94,11 +94,11 @@ function SEv.Event.Memory:Toggle(ply, cmd, args, doNotRefreshEvents, isPerPlayer
     end
 end
 
--- Base init
-function SEv.Event.Memory:InitSv(base)
-    net.Receive(base.id .. "_ask_for_memories", function(_, ply)
-        base.Event.Memory:SendAllMemories(ply)
+-- Instance init
+function SEv.Event.Memory:InitSv(instance)
+    net.Receive(instance.id .. "_ask_for_memories", function(_, ply)
+        instance.Event.Memory:SendAllMemories(ply)
     end)
 
-    base.Event.Memory.InitSv = nil
+    instance.Event.Memory.InitSv = nil
 end

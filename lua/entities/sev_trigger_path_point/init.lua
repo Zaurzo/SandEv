@@ -3,7 +3,7 @@
 ENT.Base = "base_entity"
 ENT.Type = "brush"
 
-function ENT:Setup(base, eventName, entName, vec, vecConnection)
+function ENT:Setup(instance, eventName, entName, vec, vecConnection)
     self:Spawn()
 
     local vecA = vec + Vector(10, 10, 20)
@@ -24,5 +24,5 @@ function ENT:Setup(base, eventName, entName, vec, vecConnection)
     self:SetCollisionBoundsWS(vecA, vecB)
     self:SetTrigger(true)
 
-    base.Event:SetRenderInfoEntity(self)
+    instance.Event:SetRenderInfoEntity(self)
 end

@@ -3,7 +3,7 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-function ENT:Setup(base, eventName, entName, vec, color, decay, size)
+function ENT:Setup(instance, eventName, entName, vec, color, decay, size)
     self:Spawn()
 
     local vecA = vec + Vector(10, 10, 10)
@@ -27,7 +27,7 @@ function ENT:Setup(base, eventName, entName, vec, color, decay, size)
 
     self:SetNWBool("state", true)
 
-    base.Event:SetRenderInfoEntity(self)
+    instance.Event:SetRenderInfoEntity(self)
 end
 
 function ENT:SetOn(state)

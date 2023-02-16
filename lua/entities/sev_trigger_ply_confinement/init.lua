@@ -20,7 +20,7 @@ local plyPos = {} -- { [number SteamID] = Vector last valid pos inside the space
         The player will be able to leave the area and will be completely disconnected from it.
 
 ]]
-function ENT:Setup(base, eventName, entName, vecA, vecB, keyName)
+function ENT:Setup(instance, eventName, entName, vecA, vecB, keyName)
     self:Spawn()
 
     self:SetVar("eventName", eventName)
@@ -39,7 +39,7 @@ function ENT:Setup(base, eventName, entName, vecA, vecB, keyName)
 
     SEv.Ent:SetCursed(self, true)
 
-    base.Event:SetRenderInfoEntity(self)
+    instance.Event:SetRenderInfoEntity(self)
 end
 
 local function SetAntiFugitives(confinement, ply)

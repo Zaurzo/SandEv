@@ -3,7 +3,7 @@
 ENT.Base = "base_entity"
 ENT.Type = "brush"
 
-function ENT:Setup(base, eventName, entName, vecA, vecB)
+function ENT:Setup(instance, eventName, entName, vecA, vecB)
     self:Spawn()
 
     local vecCenter = (vecA - vecB)/2 + vecB
@@ -24,5 +24,5 @@ function ENT:Setup(base, eventName, entName, vecA, vecB)
 
     SEv.Ent:SetCursed(self, true)
 
-    base.Event:SetRenderInfoEntity(self)
+    instance.Event:SetRenderInfoEntity(self)
 end

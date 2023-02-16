@@ -8,23 +8,23 @@ function SEv.Event.Memory:ReceiveAllMemories(serverMemories)
     end
 end 
 
--- Base init
-function SEv.Event.Memory:InitCl(base)
-    net.Receive(base.id .. "_broadcast_memory", function()
+-- Instance init
+function SEv.Event.Memory:InitCl(instance)
+    net.Receive(instance.id .. "_broadcast_memory", function()
         local memoryName = net.ReadString()
         local doNotRefreshEvents = net.ReadBool()
         local value = util.JSONToTable(net.ReadString())
     
         value = value and unpack(value)
     
-        base.Event.Memory:Set(memoryName, value, doNotRefreshEvents, true)
+        instance.Event.Memory:Set(memoryName, value, doNotRefreshEvents, true)
     end)
     
-    net.Receive(base.id .. "_broadcast_memories", function()
-        base.Event.Memory:ReceiveAllMemories(net.ReadTable())
-        hook.Run(base.id .. "_memories_received")
+    net.Receive(instance.id .. "_broadcast_memories", function()
+        instance.Event.Memory:ReceiveAllMemories(net.ReadTable())
+        hook.Run(instance.id .. "_memories_received")
     end)
     
 
-    base.Event.Memory.InitCl = nil
+    instance.Event.Memory.InitCl = nil
 end

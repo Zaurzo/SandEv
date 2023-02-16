@@ -9,9 +9,9 @@ local function HandleToolCategories()
     if #SEv.Tool.categoryControllers == 0 then
         local categoryNamesSearch = {}
 
-        for k, base in ipairs(SEv.Tool.bases) do
-            for j, categoryName in ipairs(base.toolCategories) do
-                categoryNamesSearch[categoryName] = base
+        for k, instance in ipairs(SEv.Tool.instances) do
+            for j, categoryName in ipairs(instance.toolCategories) do
+                categoryNamesSearch[categoryName] = instance
             end
         end
 
@@ -19,17 +19,17 @@ local function HandleToolCategories()
             if GModCategory.Header then
                 local GModCategoryName = GModCategory.Header:GetText()
 
-                local base = categoryNamesSearch[GModCategoryName]
-                if base then
-                    table.insert(SEv.Tool.categoryControllers, { derma = GModCategory, base = base })
+                local instance = categoryNamesSearch[GModCategoryName]
+                if instance then
+                    table.insert(SEv.Tool.categoryControllers, { derma = GModCategory, instance = instance })
                 end
             end
         end
     end
 
     local isAnyDevModeOn = false
-    for k, base in ipairs(SEv.bases) do
-        if base.devMode then
+    for k, instance in ipairs(SEv.instances) do
+        if instance.devMode then
             isAnyDevModeOn = true
         end
     end
@@ -39,7 +39,7 @@ local function HandleToolCategories()
             SEv.Tool.categoryControllers = {}
             break
         else
-            if categoryInfo.base.devMode or isAnyDevModeOn and categoryInfo.base == SEv then
+            if categoryInfo.instance.devMode or isAnyDevModeOn and categoryInfo.instance == SEv then
                 categoryInfo.derma:Show()
                 categoryInfo.derma:DoExpansion(true)
             else
@@ -81,8 +81,8 @@ hook.Add("OnSpawnMenuOpen", "sev_deal_with_tools_category", function()
     end
 end)
 
-function SEv:RegisterToolCategories(base)
-    if not istable(base.toolCategories) then return end
+function SEv:RegisterToolCategories(instance)
+    if not istable(instance.toolCategories) then return end
 
-    table.insert(SEv.Tool.bases, base)
+    table.insert(SEv.Tool.instances, instance)
 end

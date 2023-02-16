@@ -37,28 +37,28 @@ util.AddNetworkString("sev_lobby_debug_text")
 -- Networking
 util.AddNetworkString("sev_net_send_string")
 
--- Base only libs
-function SEv:AddBaseNets(base)
+-- Instance only libs
+function SEv:AddInstanceNets(instance)
     -- Events
-    util.AddNetworkString(base.id .. "_event_set_render_cl")
-    util.AddNetworkString(base.id .. "_event_Remove_render_cl")
-    util.AddNetworkString(base.id .. "_event_send_all_render_cl")
-    util.AddNetworkString(base.id .. "_event_request_all_render_sv")
-    util.AddNetworkString(base.id .. "_event_remove_all_cl")
-    util.AddNetworkString(base.id .. "_event_remove_all_ents_cl")
-    util.AddNetworkString(base.id .. "_event_remove_cl")
-    util.AddNetworkString(base.id .. "_event_initialize_tier_cl")
+    util.AddNetworkString(instance.id .. "_event_set_render_cl")
+    util.AddNetworkString(instance.id .. "_event_Remove_render_cl")
+    util.AddNetworkString(instance.id .. "_event_send_all_render_cl")
+    util.AddNetworkString(instance.id .. "_event_request_all_render_sv")
+    util.AddNetworkString(instance.id .. "_event_remove_all_cl")
+    util.AddNetworkString(instance.id .. "_event_remove_all_ents_cl")
+    util.AddNetworkString(instance.id .. "_event_remove_cl")
+    util.AddNetworkString(instance.id .. "_event_initialize_tier_cl")
 
     -- Memories
-    util.AddNetworkString(base.id .. "_broadcast_memory")
-    util.AddNetworkString(base.id .. "_broadcast_memories")
-    util.AddNetworkString(base.id .. "_ask_for_memories")
-    util.AddNetworkString(base.id .. "_clear_memories")
-    util.AddNetworkString(base.id .. "_set_per_player_memory_sv")
-    util.AddNetworkString(base.id .. "_set_per_player_memory_cl")
+    util.AddNetworkString(instance.id .. "_broadcast_memory")
+    util.AddNetworkString(instance.id .. "_broadcast_memories")
+    util.AddNetworkString(instance.id .. "_ask_for_memories")
+    util.AddNetworkString(instance.id .. "_clear_memories")
+    util.AddNetworkString(instance.id .. "_set_per_player_memory_sv")
+    util.AddNetworkString(instance.id .. "_set_per_player_memory_cl")
 
     -- DevMode
-    util.AddNetworkString(base.id .. "_toggle_devmode")
+    util.AddNetworkString(instance.id .. "_toggle_devmode")
 end
 
 -- SEv Devmode

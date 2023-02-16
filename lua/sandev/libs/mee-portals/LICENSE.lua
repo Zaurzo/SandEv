@@ -36,7 +36,7 @@ Modifications by Xalalau and A.R.C. Community:
 - Add small performance improvements
 - Change folders and files structure
 - Removal of portal gun
-- Adaptation of the portal entity to the map base format
+- Adaptation of the portal entity to the map instance format
 - Move main portal control variable to SEv init file
 - Move VarDrawDistance concommand to SEv devmode
 - Hide default portal material if the exit is valid

@@ -23,7 +23,7 @@
     -- Initialization file (check the next sections)
     /lua/autorun/customfilename.lua
 
-    -- The base loads the Lua files sequentially, in alphabetical order and from higher to lower folder levels
+    -- The instance loads the Lua files sequentially, in alphabetical order and from higher to lower folder levels
 
     -- General Lua file prefixes
          =   No prefix means the file will simply be mounted and available on the server
@@ -33,7 +33,7 @@
 
     e.g.  sv_myluafile.lua
 
-    -- Scripts to run right after the previous base and before the base libs and events
+    -- Scripts to run right after the previous instance and before the instance libs and events
     /lua/autorun/baseluafolder/init/*
 
     -- Custom libraries
@@ -43,19 +43,19 @@
     /lua/autorun/baseluafolder/events/tier*/*
 
     -- Events files can have these suffixes
-         =   No suffix. The event will be loaded on the base aimed maps and on all tiers
+         =   No suffix. The event will be loaded on the instance aimed maps and on all tiers
     _g   =   global. The event will be loaded on any map
-    _t   =   tier. The event will be loaded on the base aimed maps and only when the correct tier is loaded
+    _t   =   tier. The event will be loaded on the instance aimed maps and only when the correct tier is loaded
     _gt  =   global and tier
 
     e.g.  sv_myevent_g.lua
 
-    ---------------------------------
-    Minimal base initialization table
-    ---------------------------------
+    -------------------------------------
+    Minimal instance initialization table
+    -------------------------------------
 
-    BASE = {
-        id = string base small id,                           -- An small name to be part of commands and internal ids
+    INSTANCE = {
+        id = string instance small id,                           -- An small name to be part of commands and internal ids
         luaFolder = string my lua folder,                    -- For events and libs
         dataFolder = string my data folder,                  -- For memories and custom data
         maps = { string some_map_name, ... },                -- List of maps where all events must run. Add "*" to whitelist all maps
@@ -66,26 +66,26 @@
             url = string server url,
             patterns = { string pattern },                   -- Usually a folder name from /lua
         },
-        enableLogging = boolean enable,                      -- Append a copy of logging system as BASE.Log
-        enableLobby = boolean enable,                        -- Append a copy of the lobby system as BASE.Lobby
-        enableEvents = boolean enable                        -- Append a copy of the events system as BASE.Event, BASE.Event.Memory,
-                                                             -- BASE.Event.Memory.Incompatibility and BASE.Event.Memory.Dependency
+        enableLogging = boolean enable,                      -- Append a copy of logging system as INSTANCE.Log
+        enableLobby = boolean enable,                        -- Append a copy of the lobby system as INSTANCE.Lobby
+        enableEvents = boolean enable                        -- Append a copy of the events system as INSTANCE.Event, INSTANCE.Event.Memory,
+                                                             -- INSTANCE.Event.Memory.Incompatibility and INSTANCE.Event.Memory.Dependency
     }
 
-    -----------------------
-    Hook the base to SandEv
-    -----------------------
+    ---------------------------
+    Hook the instance to SandEv
+    ---------------------------
 
     -- Just copy and adapt the following code:
 
     local function PostInitCallback(isInitialized)
-        -- Run code right after the base is completely loaded
-        -- if isInitialized the base failed to integrate
+        -- Run code right after the instance is fully loaded
+        -- if isInitialized is false the instance failed to integrate to SandEv
     end
 
-    -- Include the base
-    hook.Add("sandev_init", BASE.luaFolder, function(SEv)
-        SEv:IncludeBase(BASE, PostInitCallback)
+    -- Include the instance
+    hook.Add("sandev_init", INSTANCE.luaFolder, function(SEv)
+        SEv:AddInstance(INSTANCE, PostInitCallback)
     end)
 
     --------------------
@@ -102,10 +102,10 @@
 
 SEv = SEv or {
     devMode = false, -- The devMode enables access to SandEv's in-game commands and messages. They are used to control, visualize and create events
-    id = "sandev", -- Stores base id
+    id = "sandev", -- Stores instance id
     luaFolder = "sandev", -- Stores events and libs
     dataFolder = "sandev", -- Stores memories and custom data
-    bases = {}, -- External bases, using the same structure as SEv table (they'll be loaded into the map)
+    instances = {}, -- External instances, using the same structure as SEv table (they'll be loaded into the map)
     toolCategories = { "SandEv Tools" }, -- Devmove tool categories
     errorData = { -- Send addon errors to a server
         databaseName = "sandev",
@@ -120,7 +120,7 @@ SEv = SEv or {
         gameEntityList = {}, -- { [string event name] = { [entity ent] = bool, ... }, ... }
         Memory = { -- Lib to remember player map progress
             filename = "memories.txt", -- Location to save Memories.List
-            path = "", -- Relative memories file path (base.dataFolder + SEv.Event.filename)
+            path = "", -- Relative memories file path (instance.dataFolder + SEv.Event.filename)
             list = {}, -- { [string memory name] = bool is active, ... } -- Controlled on serverside and copied to clientside
             swaped = {}, -- { [string memory name] = nil or last memory value, ... } -- Hold toggled memories values
             Incompatibility = { -- Sublib to block events based on memories
@@ -149,7 +149,7 @@ SEv = SEv or {
     Map = {
         nodesFolder = "nodes",
         nodesCacheFilename = game.GetMap() .. "_nodes.txt", -- File to save the map node positions
-        path = "", -- Relative map nodes file path (base.dataFolder + SEv.Map.nodesFolder + "map name _ SEv.Map.filename")
+        path = "", -- Relative map nodes file path (instance.dataFolder + SEv.Map.nodesFolder + "map name _ SEv.Map.filename")
         nodesList, -- { [int index] = Vector position, ... } -- Map node positions
         blockCleanup = false,
         CleanupEntFilter = {} -- { [entity ent] = bool, ... }
@@ -164,7 +164,7 @@ SEv = SEv or {
     Prop = {},
     Tool = {
         categoriesPanel,
-        bases = {},
+        instances = {},
         categoryControllers = {}
     },
     Util = {},
@@ -177,7 +177,7 @@ SEv.Map.path = SEv.dataFolder .. "/" .. SEv.Map.nodesFolder .. "/" .. SEv.Map.no
 if SERVER then
     SEv.Event.lastSentChunksID = nil -- str -- Internal. Prevent older chunks from being uploaded if the map is reloaded
 
-    -- Lobby system (lua/sev/base/sv_lobby.lua):
+    -- Lobby system (lua/sev/lobby/sv_lobby.lua):
     SEv.Lobby.servers = { -- We can have multiple server links
     }
     SEv.Lobby.selectedServerDB = ""
@@ -275,13 +275,13 @@ function SEv:IncludeFiles(folder, isCurrentTier, ignoreSuffixes, isBaseMap)
     end
 end
 
--- Add bases
-function SEv:IncludeBase(base, PostInitCallback)
-    table.insert(SEv.bases, base)
-    base.PostInitCallback = PostInitCallback
+-- Add instances
+function SEv:AddInstance(instance, PostInitCallback)
+    table.insert(SEv.instances, instance)
+    instance.PostInitCallback = PostInitCallback
 
-    if base.id then
-        print("[SandEv] Registered " .. base.id .. " base")
+    if instance.id then
+        print("[SandEv] Registered " .. instance.id .. " instance")
     end
 end
 
@@ -293,9 +293,9 @@ local function PostInitCallback(initialized)
     end
 end
 
--- Bases init
+-- Instances init
 hook.Add("InitPostEntity", "sev_init", function()
-    -- Register bases
+    -- Register instances
     hook.Run("sandev_init", SEv)
 
     -- Check gamemode (sandbox family only)
@@ -304,9 +304,9 @@ hook.Add("InitPostEntity", "sev_init", function()
     if not gamemode.IsSandboxDerived then
         PostInitCallback(false)
 
-        for k, base in ipairs(SEv.bases) do
-            if base.PostInitCallback then
-                base.PostInitCallback(false)
+        for k, instance in ipairs(SEv.instances) do
+            if instance.PostInitCallback then
+                instance.PostInitCallback(false)
             end
         end
 
@@ -371,39 +371,39 @@ hook.Add("InitPostEntity", "sev_init", function()
         print("[SandEv] Loaded itself")
     end
 
-    -- Init bases
-    for k, base in ipairs(SEv.bases) do
+    -- Init instances
+    for k, instance in ipairs(SEv.instances) do
         -- Initialize net variables
         if SERVER then
-            SEv:AddBaseNets(base)
+            SEv:AddInstanceNets(instance)
         end
 
         -- Copy the Log lib
-        if base.enableLogging then
-            local override = base.Log
+        if instance.enableLogging then
+            local override = instance.Log
 
-            base.Log = table.Copy(SEv.Log)
+            instance.Log = table.Copy(SEv.Log)
 
             if override then
-                table.Merge(base.Log, override)
+                table.Merge(instance.Log, override)
             end
         end
 
         -- Add devMode
-        SEv:AddDevModeToBase(base)
+        SEv:AddDevModeToInstance(instance)
 
         -- Create data folders
-        file.CreateDir(base.dataFolder)
+        file.CreateDir(instance.dataFolder)
 
         -- Load init functions
-        SEv:IncludeFiles(base.luaFolder .. "/init/", nil, true)
+        SEv:IncludeFiles(instance.luaFolder .. "/init/", nil, true)
 
         -- Register ErrorAPI entries
-        if base.errorData then
-            local addonData = ErrorAPI:RegisterAddon(base.errorData.databaseName, base.errorData.url, base.errorData.patterns, base.errorData.wsid)
+        if instance.errorData then
+            local addonData = ErrorAPI:RegisterAddon(instance.errorData.databaseName, instance.errorData.url, instance.errorData.patterns, instance.errorData.wsid)
 
             if addonData then
-                hook.Add(base.id .. "_devmode", base.luaFolder .. "_control_error_api", function(state)
+                hook.Add(instance.id .. "_devmode", instance.luaFolder .. "_control_error_api", function(state)
                     addonData.enabled = not state
                 end)
             end
@@ -411,93 +411,93 @@ hook.Add("InitPostEntity", "sev_init", function()
 
         -- Set tool categories
         if CLIENT then
-            SEv:RegisterToolCategories(base)
+            SEv:RegisterToolCategories(instance)
         end
 
         -- Include libs
-        SEv:IncludeFiles(base.luaFolder .. "/libs/", nil, true)
+        SEv:IncludeFiles(instance.luaFolder .. "/libs/", nil, true)
 
         -- Initialize custom lobby systems
-        if base.enableLobby then
-            local override = base.Lobby
+        if instance.enableLobby then
+            local override = instance.Lobby
 
-            base.Lobby = table.Copy(SEv.Lobby)
+            instance.Lobby = table.Copy(SEv.Lobby)
 
-            base.Lobby.base = base
+            instance.Lobby.instance = instance
 
             if override then
-                table.Merge(base.Lobby, override)
+                table.Merge(instance.Lobby, override)
             end
         end
 
         -- Initialize custom event systems
-        if base.enableEvents then
-            local override = base.Event
+        if instance.enableEvents then
+            local override = instance.Event
 
-            base.Event = table.Copy(SEv.Event)
+            instance.Event = table.Copy(SEv.Event)
 
-            base.Event.base = base
-            base.Event.Memory.base = base
-            base.Event.Memory.Incompatibility.base = base
-            base.Event.Memory.Dependency.base = base
+            instance.Event.instance = instance
+            instance.Event.Memory.instance = instance
+            instance.Event.Memory.Incompatibility.instance = instance
+            instance.Event.Memory.Dependency.instance = instance
 
             -- Define memories file path
-            base.Event.Memory.path = base.dataFolder .. "/" .. SEv.Event.Memory.filename
+            instance.Event.Memory.path = instance.dataFolder .. "/" .. SEv.Event.Memory.filename
 
-            base.Event:InitSh(base)
+            instance.Event:InitSh(instance)
             if SERVER then
-                base.Event:InitSv(base)
+                instance.Event:InitSv(instance)
             else
-                base.Event:InitCl(base)
+                instance.Event:InitCl(instance)
             end
 
-            base.Event.Memory:InitSh(base)
+            instance.Event.Memory:InitSh(instance)
             if SERVER then
-                base.Event.Memory:InitSv(base)
+                instance.Event.Memory:InitSv(instance)
             else
-                base.Event.Memory:InitCl(base)
+                instance.Event.Memory:InitCl(instance)
             end
 
             if SERVER then
-                base.Event.Memory:Load()
-                base.Event:InitializeTier()
+                instance.Event.Memory:Load()
+                instance.Event:InitializeTier()
             end
 
             if override then
-                table.Merge(base.Event, override)
+                table.Merge(instance.Event, override)
             end
 
             -- Send the server memories at the appropriate time
             if CLIENT then
-                net.Start(base.id .. "_ask_for_memories")
+                net.Start(instance.id .. "_ask_for_memories")
                 net.SendToServer()
 
-                hook.Add(base.id .. "_memories_received", base.id .. "_initialize_cl_events", function()
-                    base.Event:InitializeTier()
+                hook.Add(instance.id .. "_memories_received", instance.id .. "_initialize_cl_events", function()
+                    instance.Event:InitializeTier()
                 end)
             end
         end
 
         -- Set devmode
-        if base.devMode then
-            base:EnableDevMode()
+        if instance.devMode then
+            instance:EnableDevMode()
         end
 
         -- Run last initializations
-        if base.PostInitCallback then
-            base.PostInitCallback(true)
+        if instance.PostInitCallback then
+            instance.PostInitCallback(true)
         end
 
-        -- Run post base init hook
-        hook.Run(base.id .. "_post_init", base)
+        -- Run post instance init hook
+        hook.Run(instance.id .. "_post_init", instance)
 
         -- Print message
-        if base.id then
-            print("[SandEv] Loaded " .. base.id .. " base")
+        if instance.id then
+            print("[SandEv] Loaded " .. instance.id .. " instance")
         end
     end
 
-    -- Lock down some libs after we're done copying them to bases
+    -- Lock down some libs after we're done copying them to instances
     SEv.Util:BlockDirectLibCalls(SEv.Log)
     SEv.Util:BlockDirectLibCalls(SEv.Lobby)
     SEv.Util:BlockDirectLibCalls(SEv.Event)

@@ -29,17 +29,17 @@ local eventName = "myEvent"
 -- Set some variables that are kept when the map is cleared
 local saved = false
 
--- This is an extra variable that will be used by BASE.Log:Debug
+-- This is an extra variable that will be used by INSTANCE.Log:Debug
 local DEBUG = true
 
 -- Set some memory dependencies. An event can provide or request memories
 -- When a memory is provided, events that require this memory are automatically loaded
-BASE.Event.Memory.Dependency:SetProvider(eventName, "myMemory1", "myMemory2", ...)
-BASE.Event.Memory.Dependency:SetDependent(eventName, "iNeedMemoryX", "iNeedMemoryY", ...)
+INSTANCE.Event.Memory.Dependency:SetProvider(eventName, "myMemory1", "myMemory2", ...)
+INSTANCE.Event.Memory.Dependency:SetDependent(eventName, "iNeedMemoryX", "iNeedMemoryY", ...)
 
 -- It's also possible to declare a memory incompatibility and force the event to terminate
 -- automatically when this memory is provided.
-BASE.Event.Memory.Incompatibility:Set(eventName, "anyMemoryIDontLike", ...)
+INSTANCE.Event.Memory.Incompatibility:Set(eventName, "anyMemoryIDontLike", ...)
 
 -- Create your own stuff with as many functions as you need
 local function SomeAuxFunc()
@@ -52,12 +52,12 @@ local function CreateEvent()
     -- The purpose of SEv entities is to mark areas, make triggers and create sents
     -- Marked areas and triggers can be rendered on the clientside to facilitate development
     local someEnt = ents.Create("sev_some_ent")
-    someEnt:Setup(BASE, eventName, "entName", Vector(x,y,z), otherVars)
+    someEnt:Setup(INSTANCE, eventName, "entName", Vector(x,y,z), otherVars)
 
     -- Create entities and connect them to the event so that they are automatically cleared if the it ends
     local citizen = ents.Create("npc_citizen")
     citizen:Spawn()
-    BASE.Event:SetGameEntity(eventName, citizen)
+    INSTANCE.Event:SetGameEntity(eventName, citizen)
 
     -- Use SandEv libs to set custom behaviours, such as
     SEv.Ent:BlockPhysgun(ent, value)
@@ -89,15 +89,15 @@ local function CreateEvent()
     -- And many more
 
     -- Print some log messages
-    BASE.Log:Debug(DEBUG, "debug")
-    BASE.Log:Info("info")
-    BASE.Log:Warning("warning")
-    BASE.Log:Error("error")
-    BASE.Log:Critical("critical")
+    INSTANCE.Log:Debug(DEBUG, "debug")
+    INSTANCE.Log:Info("info")
+    INSTANCE.Log:Warning("warning")
+    INSTANCE.Log:Error("error")
+    INSTANCE.Log:Critical("critical")
 
     -- A common thing in events are triggers, so create and populate them here. E.G.
     local someTrigger = ents.Create("sev_trigger")
-    someTrigger:Setup(BASE, eventName, "someTrigger", Vector(-100, -100, 25), Vector(100, 100, 125))
+    someTrigger:Setup(INSTANCE, eventName, "someTrigger", Vector(-100, -100, 25), Vector(100, 100, 125))
 
     function someTrigger:StartTouch(ent)
         -- In this case, only accept players
@@ -113,7 +113,7 @@ local function CreateEvent()
             -- https://wiki.facepunch.com/gmod/util.TableToJSON
             -- https://github.com/Facepunch/garrysmod-issues/issues/3561
             -- But fear not, it usually works.
-            BASE.Event.Memory:Set("firstDeath", anyVariable) 
+            INSTANCE.Event.Memory:Set("firstDeath", anyVariable) 
         end
 
         -- Call any extra
@@ -175,6 +175,6 @@ local function IgnoreEvent()
 end
 
 -- Link functions to the event system
-BASE.Event:SetCall(eventName, CreateEvent)
-BASE.Event:SetDisableCall(eventName, RemoveEvent)
-BASE.Event:SetBlockedByMemoryCall(eventName, IgnoreEvent)
+INSTANCE.Event:SetCall(eventName, CreateEvent)
+INSTANCE.Event:SetDisableCall(eventName, RemoveEvent)
+INSTANCE.Event:SetBlockedByMemoryCall(eventName, IgnoreEvent)

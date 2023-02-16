@@ -16,8 +16,8 @@ hook.Add("PreCleanupMap", "sev_protect_persistent_props", function()
     end)
 end)
 
-function ENT:Setup(base, eventName, entName, vecA, vecB, protectConstruction, isReadOnly, dumpInfoToTxtFile)
-    self.base = base
+function ENT:Setup(instance, eventName, entName, vecA, vecB, protectConstruction, isReadOnly, dumpInfoToTxtFile)
+    self.instance = instance
     self:Spawn()
 
     isReadOnly = isReadOnly or false
@@ -47,7 +47,7 @@ function ENT:Setup(base, eventName, entName, vecA, vecB, protectConstruction, is
 
     SEv.Ent:SetCursed(self, true)
 
-    local persistentFolder = base.dataFolder .. "/persistent"
+    local persistentFolder = instance.dataFolder .. "/persistent"
     file.CreateDir(persistentFolder)
 
     self.persistentFile = persistentFolder .. "/" .. entName .. ".dat"
@@ -95,7 +95,7 @@ function ENT:Setup(base, eventName, entName, vecA, vecB, protectConstruction, is
         end)
     end
 
-    base.Event:SetRenderInfoEntity(self)
+    instance.Event:SetRenderInfoEntity(self)
 end
 
 function ENT:ModifyEntAndConstrainedEnts(ent)
@@ -309,7 +309,7 @@ function ENT:StartTouch(ent)
         self.playersIn[ent] = true
     end
 
-    self.base.Event:SetGameEntity(self:GetVar("eventName"), ent)
+    self.instance.Event:SetGameEntity(self:GetVar("eventName"), ent)
 
     if not SEv.Ent:IsSpawnedByPlayer(ent) or ent:IsNextBot() then return end
     if ent.sev_duplicated or ent.sev_constraint then return end
@@ -349,7 +349,7 @@ function ENT:EndTouch(ent)
     if self:GetVar("isReadOnly") then return end
 
     self:UnsaveEnt(ent)
-    self.base.Event:RemoveGameEntity(self:GetVar("eventName"), ent)
+    self.instance.Event:RemoveGameEntity(self:GetVar("eventName"), ent)
 end
 
 -- If for some reason entities spawn repeated (perfectly overlaping), use this to remove the extra ones

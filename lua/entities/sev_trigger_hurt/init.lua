@@ -3,7 +3,7 @@
 ENT.Base = "base_entity"
 ENT.Type = "brush"
 
-function ENT:Setup(base, eventName, entName, vecA, vecB, filterIn, dmg, dmgType, delay)
+function ENT:Setup(instance, eventName, entName, vecA, vecB, filterIn, dmg, dmgType, delay)
     dmgType = dmgType or DMG_GENERIC
     delay = delay or 1
 
@@ -35,7 +35,7 @@ function ENT:Setup(base, eventName, entName, vecA, vecB, filterIn, dmg, dmgType,
 
     SEv.Ent:SetCursed(self, true)
 
-    base.Event:SetRenderInfoEntity(self)
+    instance.Event:SetRenderInfoEntity(self)
 end
 
 local waitNextDamage

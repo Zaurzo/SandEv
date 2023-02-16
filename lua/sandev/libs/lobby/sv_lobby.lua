@@ -49,7 +49,7 @@
 
 -- Print some nice messages
 function SEv.Lobby:PrintStatus(message)
-    if self.base.devMode then
+    if self.instance.devMode then
         net.Start("sev_lobby_debug_text")
         net.WriteString(message)
         net.Broadcast()
@@ -72,7 +72,7 @@ function SEv.Lobby:SelectBestServer(tryingServerId, lastPlayersQuantity, lastBes
     end
 
     if tryingServerId ~= -1 and lastPlayersQuantity ~= 1 then
-        hook.Run(self.base.id .."_lobby_select_server")
+        hook.Run(self.instance.id .."_lobby_select_server")
 
         http.Post(self.servers[tryingServerId] .. "ping.php?db=" .. self.selectedServerDB,
             {},
@@ -115,7 +115,7 @@ end
 
 function SEv.Lobby:GetInfo()
     if not self.isEnabled then return end
-    hook.Run(self.base.id .."_lobby_get_info")
+    hook.Run(self.instance.id .."_lobby_get_info")
 
     self:PrintStatus("Getting server info...")
 
@@ -153,7 +153,7 @@ function SEv.Lobby:GetInfo()
                         local timeUntilNewLobby = lobbyInfo["next_lobby_s"] + 1
                         self:PrintStatus("Not enouth players. Waiting " .. timeUntilNewLobby .. "s to start a new lobby...")
 
-                        timer.Create(self.base.id .."_lobby_wait_until_next_one", timeUntilNewLobby, 1, function()
+                        timer.Create(self.instance.id .."_lobby_wait_until_next_one", timeUntilNewLobby, 1, function()
                             self:GetInfo()
                         end)
                     end
@@ -197,34 +197,34 @@ function SEv.Lobby:SyncWithServerTimes(lobbyInfo, tooEarly, tooLate, inTime)
 
         -- Extra sync to combat desync
         if timeStartSendingInfo > lobbyInfo["extra_sync_s"] then
-            hook.Run(self.base.id .."_lobby_sync_extra")
+            hook.Run(self.instance.id .."_lobby_sync_extra")
 
             local timeExtraSync = timeStartSendingInfo - lobbyInfo["extra_sync_s"]
 
             self:PrintStatus("Start syncing with server times. Waiting " .. timeExtraSync .. " seconds...")
 
-            timer.Create(self.base.id .."_lobby_extra_sync", timeExtraSync, 1, function()
+            timer.Create(self.instance.id .."_lobby_extra_sync", timeExtraSync, 1, function()
                 self:PrintStatus("Syncing done.")
                 self:GetInfo()
             end)
         -- Wait until the exact moment of the check phase and setup lobby checking
         else
-            hook.Run(self.base.id .."_lobby_sync")
+            hook.Run(self.instance.id .."_lobby_sync")
 
             self:PrintStatus("Waiting " .. timeStartSendingInfo .. " seconds for the application stage...")
 
-            timer.Create(self.base.id .."_lobby_start_sending_info", timeStartSendingInfo, 1, function()
+            timer.Create(self.instance.id .."_lobby_start_sending_info", timeStartSendingInfo, 1, function()
                 self:PrintStatus("Syncing done.")
                 self:GetInfo()
             end)
         end
     -- The server is in the player selection phase. 
     elseif tooLate or self.isNewEntry and inTime then
-        hook.Run(self.base.id .."_lobby_sync_late")
+        hook.Run(self.instance.id .."_lobby_sync_late")
 
         self:PrintStatus("Too late to sync! Trying again in " .. (lobbyInfo["next_lobby_s"] + 1) .. " seconds.")
 
-        timer.Create(self.base.id .."_lobby_too_late", lobbyInfo["next_lobby_s"] + 1, 1, function()
+        timer.Create(self.instance.id .."_lobby_too_late", lobbyInfo["next_lobby_s"] + 1, 1, function()
             self:GetInfo()
         end)
     end
@@ -233,14 +233,14 @@ end
 -- Apply for a spot in the next lobby
 function SEv.Lobby:ApplyIn(lobbyInfo, delayTolerance)
     if not self.isEnabled then return end
-    hook.Run(self.base.id .."_lobby_apply_in")
+    hook.Run(self.instance.id .."_lobby_apply_in")
 
     local timeUntilStartChecks = lobbyInfo["accept_info_s"]
     local infoDispersion = math.random(delayTolerance, timeUntilStartChecks) - delayTolerance
     timeUntilStartChecks = timeUntilStartChecks - infoDispersion
 
     -- Refresh the player's information before the server decides the lobby (avoiding too many requests at the same time)
-    timer.Create(self.base.id .."_lobby_info_dispersion", infoDispersion, 1, function()
+    timer.Create(self.instance.id .."_lobby_info_dispersion", infoDispersion, 1, function()
         local entryData = {
             gameID = tostring(self.gameID),
             map = game.GetMap(),
@@ -280,7 +280,7 @@ end
 -- Check if the server selected this player for the next lobby (avoiding too many requests at the same time)
 function SEv.Lobby:Check(lobbyInfo, timeUntilStartChecks, delayTolerance)
     if not self.isEnabled then return end
-    hook.Run(self.base.id .."_lobby_check")
+    hook.Run(self.instance.id .."_lobby_check")
 
     local checkDispersion = math.random(delayTolerance, lobbyInfo["start_checks_s"]) - delayTolerance
     local timeUntilLobbyStarts = lobbyInfo["start_checks_s"] - checkDispersion
@@ -289,7 +289,7 @@ function SEv.Lobby:Check(lobbyInfo, timeUntilStartChecks, delayTolerance)
 
     self.lobbyChecks = self.lobbyChecks + 1
 
-    timer.Create(self.base.id .."_lobby_check", timeUntilStartChecks + checkDispersion, 1, function()
+    timer.Create(self.instance.id .."_lobby_check", timeUntilStartChecks + checkDispersion, 1, function()
         local entryData = {
             gameID = tostring(self.gameID)
         }
@@ -307,11 +307,11 @@ function SEv.Lobby:Check(lobbyInfo, timeUntilStartChecks, delayTolerance)
                 if result == "1" then
                     self:PrintStatus("YEP. Waiting " .. tostring(math.Round(timeUntilLobbyStarts, 2)) .. "s to join...")
 
-                    timer.Create(self.base.id .."_lobby_success_join", timeUntilLobbyStarts, 1, function()
+                    timer.Create(self.instance.id .."_lobby_success_join", timeUntilLobbyStarts, 1, function()
                         self:Join(lobbyInfo["tick_s"], lobbyInfo["playing_time_s"], delayTolerance)
                     end)
 
-                    timer.Remove(self.base.id .."_lobby_apply_in")
+                    timer.Remove(self.instance.id .."_lobby_apply_in")
                 else
                     if self.lobbyChecks == self.lobbyChecksLimit then
                         self:PrintStatus("The player failed to join " .. self.lobbyChecksLimit .. " times. Stopping the event...")
@@ -322,7 +322,7 @@ function SEv.Lobby:Check(lobbyInfo, timeUntilStartChecks, delayTolerance)
 
                         self:PrintStatus("NOPE. Re-entering the lobby creation system in " .. timeUntilReenter .. "s...")
 
-                        timer.Create(self.base.id .."_lobby_fail_join", timeUntilReenter, 1, function()
+                        timer.Create(self.instance.id .."_lobby_fail_join", timeUntilReenter, 1, function()
                             self:GetInfo()
                         end)
                     end
@@ -343,7 +343,7 @@ end
 -- Note: The server (and not this function) defines who is in the lobby!
 function SEv.Lobby:Join(tick_s, playing_time_s, delayTolerance, localMode)
     if not self.isEnabled and not localMode then return end
-    hook.Run(self.base.id .."_lobby_play")
+    hook.Run(self.instance.id .."_lobby_play")
 
     self:PrintStatus("Joining the lobby and starting event...")
 
@@ -357,16 +357,16 @@ function SEv.Lobby:Join(tick_s, playing_time_s, delayTolerance, localMode)
     end
 
     for k, ply in ipairs(player.GetHumans()) do
-        ply:SetNWInt(self.base.id .."_lobby", 0)
+        ply:SetNWInt(self.instance.id .."_lobby", 0)
     end
 
     -- Simulate damage
 
-    hook.Add("EntityTakeDamage", self.base.id .."_lobby_check_invader_damage", function(target, dmginfo)
+    hook.Add("EntityTakeDamage", self.instance.id .."_lobby_check_invader_damage", function(target, dmginfo)
         if target:GetClass() == self.invaderClass then
             local attacker = dmginfo:GetAttacker()
 
-            if attacker and attacker:IsValid() and attacker:IsPlayer() and attacker:GetNWInt(self.base.id .."_lobby") == 1 then
+            if attacker and attacker:IsValid() and attacker:IsPlayer() and attacker:GetNWInt(self.instance.id .."_lobby") == 1 then
                 if math.random(1, 100) <= 50 then
                     target.sev_hit_counter = target.sev_hit_counter or 0
                     target.sev_hit_counter = target.sev_hit_counter + 1
@@ -381,7 +381,7 @@ function SEv.Lobby:Join(tick_s, playing_time_s, delayTolerance, localMode)
 
     -- Firing
 
-    hook.Add("KeyPress", self.base.id .."_lobby_check_key_pressed", function(ply, key)
+    hook.Add("KeyPress", self.instance.id .."_lobby_check_key_pressed", function(ply, key)
         if key == IN_ATTACK then
             local mode = 1
             local weapon = ply:GetActiveWeapon()
@@ -393,7 +393,7 @@ function SEv.Lobby:Join(tick_s, playing_time_s, delayTolerance, localMode)
         end
     end)
 
-    hook.Add("KeyRelease", self.base.id .."_lobby_check_key_released", function(ply, key)
+    hook.Add("KeyRelease", self.instance.id .."_lobby_check_key_released", function(ply, key)
         if key == IN_ATTACK then
             GetPlyData(ply)["stoppedFiring"] = 1 -- This is so that I always send at least 1 shot. People release mouse 1 too fast.
         end
@@ -401,7 +401,7 @@ function SEv.Lobby:Join(tick_s, playing_time_s, delayTolerance, localMode)
 
     -- Chat
 
-    hook.Add("PlayerSay", self.base.id .."_lobby_check_message", function(ply)
+    hook.Add("PlayerSay", self.instance.id .."_lobby_check_message", function(ply)
         GetPlyData(ply)["usedChat"] = 1
     end)
 
@@ -416,10 +416,10 @@ function SEv.Lobby:Join(tick_s, playing_time_s, delayTolerance, localMode)
     local safetyRepetitions = 5
     local repetitions = playing_time_s / tick_s + toleranceRepetitions + safetyRepetitions
 
-    timer.Create(self.base.id .."_lobby_join_dispersion", microDispersion, 1, function()
+    timer.Create(self.instance.id .."_lobby_join_dispersion", microDispersion, 1, function()
         if not self.isEnabled and not localMode then return end
 
-        timer.Create(self.base.id .."_lobby_connect_lobby", tick_s, repetitions, function()
+        timer.Create(self.instance.id .."_lobby_connect_lobby", tick_s, repetitions, function()
             -- Gather the important information
 
             local entryData = {}
@@ -475,8 +475,8 @@ function SEv.Lobby:Join(tick_s, playing_time_s, delayTolerance, localMode)
                 for entIndex, plyData in pairs(entryData) do
                     local ply = ents.GetByIndex(tonumber(entIndex))
 
-                    if ply:GetNWInt(self.base.id .."_lobby") == 0 then
-                        ply:SetNWInt(self.base.id .."_lobby", 1)
+                    if ply:GetNWInt(self.instance.id .."_lobby") == 0 then
+                        ply:SetNWInt(self.instance.id .."_lobby", 1)
                     end
 
                     local pos = string.Explode(",", plyData.pos, false)
@@ -494,7 +494,7 @@ function SEv.Lobby:Join(tick_s, playing_time_s, delayTolerance, localMode)
                         ['invaders'] = { [tostring(ply:EntIndex())] = plyData }
                     }
 
-                    hook.Run(self.base.id .."_lobby_data", fakeData, tick_s, playing_time_s)
+                    hook.Run(self.instance.id .."_lobby_data", fakeData, tick_s, playing_time_s)
                 end
             else
                 http.Post(self.selectedServerLink .. "play.php?db=" .. self.selectedServerDB,
@@ -511,8 +511,8 @@ function SEv.Lobby:Join(tick_s, playing_time_s, delayTolerance, localMode)
 
                         -- Enter lobby + no godmode
                         for k, ply in ipairs(player.GetHumans()) do
-                            if ply:GetNWInt(self.base.id .."_lobby") == 0 then
-                                ply:SetNWInt(self.base.id .."_lobby", 1)
+                            if ply:GetNWInt(self.instance.id .."_lobby") == 0 then
+                                ply:SetNWInt(self.instance.id .."_lobby", 1)
                             end
 
                             ply:GodDisable()
@@ -541,26 +541,26 @@ function SEv.Lobby:Join(tick_s, playing_time_s, delayTolerance, localMode)
                                 end
                             end
 
-                            hook.Run(self.base.id .."_lobby_data", data, tick_s, playing_time_s)
+                            hook.Run(self.instance.id .."_lobby_data", data, tick_s, playing_time_s)
                         end
 
                         -- Inform the server about the start of the lobby
                         -- This runs as soon as there is invader information available
                         if not alertedPlayers and data['invaders'] and table.Count(data['invaders']) > 0 then
-                            hook.Run(self.base.id .."_lobby_event_started", data)
+                            hook.Run(self.instance.id .."_lobby_event_started", data)
                             alertedPlayers = true
                         end
 
                         -- Lobby result (maxtime, unsolved, survived, nolobby, defeated)
                         if data['result'] then
                             self:Exit()
-                            hook.Run(self.base.id .."_lobby_result", data['result'])
+                            hook.Run(self.instance.id .."_lobby_result", data['result'])
                         end
 
                         -- Safety stop (the timer is suposed to always stop before it ends)
-                        if timer.RepsLeft(self.base.id .."_lobby_connect_lobby") == 0 then
+                        if timer.RepsLeft(self.instance.id .."_lobby_connect_lobby") == 0 then
                             self:Exit()
-                            hook.Run(self.base.id .."_lobby_result", "maxtime")
+                            hook.Run(self.instance.id .."_lobby_result", "maxtime")
                         end
                     end,
                     function(message)
@@ -576,8 +576,8 @@ function SEv.Lobby:Join(tick_s, playing_time_s, delayTolerance, localMode)
     end)
 
     -- Finish event
-    timer.Create(self.base.id .."_lobby_disconnect_lobby", playing_time_s + microDispersion, 1, function()
-        timer.Remove(self.base.id .."_lobby_connect_lobby")
+    timer.Create(self.instance.id .."_lobby_disconnect_lobby", playing_time_s + microDispersion, 1, function()
+        timer.Remove(self.instance.id .."_lobby_connect_lobby")
     end)
 end
 
@@ -585,7 +585,7 @@ end
 function SEv.Lobby:ForceDisconnect()
     if not self.isEnabled then return end
 
-    timer.Remove(self.base.id .."_lobby_connect_lobby")
+    timer.Remove(self.instance.id .."_lobby_connect_lobby")
 
     local entryData = {}
 
@@ -614,31 +614,31 @@ function SEv.Lobby:ForceDisconnect()
         )
     end
 
-    hook.Run(self.base.id .."_lobby_result", "stopped")
+    hook.Run(self.instance.id .."_lobby_result", "stopped")
     self:Exit()
 end
 
 -- Fully stop the lobby system
 function SEv.Lobby:Exit()
-    hook.Run(self.base.id .."_lobby_exit")
+    hook.Run(self.instance.id .."_lobby_exit")
 
     self.isEnabled = false
     self.isNewEntry = true
     self.selectedServerLink = ""
     self.lobbyChecks = 0
-    timer.Remove(self.base.id .."_lobby_connect_lobby")
-    timer.Remove(self.base.id .."_lobby_disconnect_lobby")
-    timer.Remove(self.base.id .."_lobby_check_invader_damage")
-    timer.Remove(self.base.id .."_lobby_wait_until_next_one")
-    timer.Remove(self.base.id .."_lobby_extra_sync")
-    timer.Remove(self.base.id .."_lobby_start_sending_info")
-    timer.Remove(self.base.id .."_lobby_too_late")
-    timer.Remove(self.base.id .."_lobby_info_dispersion")
-    timer.Remove(self.base.id .."_lobby_check")
-    timer.Remove(self.base.id .."_lobby_success_join")
-    timer.Remove(self.base.id .."_lobby_fail_join")
-    timer.Remove(self.base.id .."_lobby_join_dispersion")
-    hook.Remove("KeyPress", self.base.id .."_lobby_check_key_pressed")
-    hook.Remove("KeyRelease", self.base.id .."_lobby_check_key_released")
-    hook.Remove("OnPlayerChat", self.base.id .."_lobby_check_message")
+    timer.Remove(self.instance.id .."_lobby_connect_lobby")
+    timer.Remove(self.instance.id .."_lobby_disconnect_lobby")
+    timer.Remove(self.instance.id .."_lobby_check_invader_damage")
+    timer.Remove(self.instance.id .."_lobby_wait_until_next_one")
+    timer.Remove(self.instance.id .."_lobby_extra_sync")
+    timer.Remove(self.instance.id .."_lobby_start_sending_info")
+    timer.Remove(self.instance.id .."_lobby_too_late")
+    timer.Remove(self.instance.id .."_lobby_info_dispersion")
+    timer.Remove(self.instance.id .."_lobby_check")
+    timer.Remove(self.instance.id .."_lobby_success_join")
+    timer.Remove(self.instance.id .."_lobby_fail_join")
+    timer.Remove(self.instance.id .."_lobby_join_dispersion")
+    hook.Remove("KeyPress", self.instance.id .."_lobby_check_key_pressed")
+    hook.Remove("KeyRelease", self.instance.id .."_lobby_check_key_released")
+    hook.Remove("OnPlayerChat", self.instance.id .."_lobby_check_message")
 end

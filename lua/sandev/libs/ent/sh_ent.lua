@@ -246,7 +246,7 @@ ENT.GetClass = function(self)
 end
 
 -- Hide information from HUDs and ent finders
--- See /base/addon/entinfo
+-- See /instance/addon/entinfo
 
 function SEv.Ent:IsInfoHidden(ent)
     if not IsValid(ent) then return false end

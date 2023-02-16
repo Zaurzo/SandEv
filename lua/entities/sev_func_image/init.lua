@@ -5,7 +5,7 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-function ENT:Setup(base, eventName, entName, vecCenter, width, height, angles, materialName, clientKey, flashlightOnlyMode)
+function ENT:Setup(instance, eventName, entName, vecCenter, width, height, angles, materialName, clientKey, flashlightOnlyMode)
     self:Spawn()
 
     local relVecA = Vector(height / 2, 0, width / 2)
@@ -47,5 +47,5 @@ function ENT:Setup(base, eventName, entName, vecCenter, width, height, angles, m
 
     SEv.Map:SetProtectedEntity(self)
 
-    base.Event:SetRenderInfoEntity(self)
+    instance.Event:SetRenderInfoEntity(self)
 end

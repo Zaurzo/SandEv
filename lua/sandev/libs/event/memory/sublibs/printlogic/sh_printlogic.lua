@@ -217,7 +217,7 @@ function SEv.Event.Memory.Dependency:PrintLogic()
         end
 
         -- Incompatibilities
-        local incompatibilitiesList = self.base.Event.Memory.Incompatibility:GetList()
+        local incompatibilitiesList = self.instance.Event.Memory.Incompatibility:GetList()
 
         if next(incompatibilitiesList) then
             local formattedIcompat = {}

@@ -482,7 +482,7 @@ if SERVER then
     end)
 end
 
--- AddCSLua for files added by the SandEv bases system
+-- AddCSLua for files added by the SandEv instances system
 -- This function is only used on dedicated servers
 -- DO NOT call directly!! It's a callback for the SendData function
 function ReceivedExtraAddCSLua(data)

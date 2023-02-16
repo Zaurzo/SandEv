@@ -59,26 +59,26 @@ function SEv.Event:SetRenderInfoEntity(ent)
         local eventName = entRenderInfo.eventName
 
         if not eventName then return end
-        -- This check isn't true normally, only when someone wants to force spawn an object, as some of the external bases have done.
+        -- This check isn't true normally, only when someone wants to force spawn an object, as some of the external instances have done.
         -- However I believe that saves and duplications can also cause problems with unloaded events.
 
         self.customEntityList[eventName] = self.customEntityList[eventName] or {}
         self.customEntityList[eventName][ent] = entRenderInfo
 
         -- Send entRenderInfo to render
-        if not self.base.devMode then return end
+        if not self.instance.devMode then return end
 
         if SERVER then
             if blockSendFirstEntities then return end
 
-            net.Start(self.base.id .. "_event_set_render_cl")
+            net.Start(self.instance.id .. "_event_set_render_cl")
                 net.WriteTable(entRenderInfo)
             net.Broadcast()
         else
             self:Render(entRenderInfo)
         end
 
-        ent:CallOnRemove(self.base.id .. "_remove_render_info", function()
+        ent:CallOnRemove(self.instance.id .. "_remove_render_info", function()
             if self:GetEntityRenderInfo(ent) then
                 self:RemoveRenderInfoEntity(ent)
             end
@@ -88,7 +88,7 @@ end
 
 -- Remove a custom event entity
 function SEv.Event:RemoveRenderInfoEntity(ent)
-    if not IsValid(ent) or not self.base then return end
+    if not IsValid(ent) or not self.instance then return end
 
     local entRenderInfo = self:GetEntityRenderInfo(ent)
 
@@ -103,11 +103,11 @@ function SEv.Event:RemoveRenderInfoEntity(ent)
             self.customEntityList[eventName][ent] = nil
         end
 
-        if not self.base.devMode or not SERVER then return end
+        if not self.instance.devMode or not SERVER then return end
 
         local entID = entRenderInfo.entID
 
-        net.Start(self.base.id .. "_event_remove_render_cl")
+        net.Start(self.instance.id .. "_event_remove_render_cl")
             net.WriteString(eventName)
             net.WriteString(entID)
         net.Broadcast()
@@ -148,7 +148,7 @@ function SEv.Event:RemoveAll()
     self.list = {}
 
     if SERVER then
-        net.Start(self.base.id .. "_event_remove_all_cl")
+        net.Start(self.instance.id .. "_event_remove_all_cl")
         net.Broadcast()
     end
 end
@@ -189,10 +189,10 @@ function SEv.Event:Remove(eventNameOut)
         self.list[eventNameOut].enabled = false
     end
 
-    hook.Run(self.base.id .. "_remove_" .. eventNameOut)
+    hook.Run(self.instance.id .. "_remove_" .. eventNameOut)
 
     if SERVER and hasEntities then
-        net.Start(self.base.id .. "_event_remove_cl")
+        net.Start(self.instance.id .. "_event_remove_cl")
             net.WriteString(eventNameOut)
         net.Broadcast()
     end
@@ -220,7 +220,7 @@ function SEv.Event:Run(eventName)
 
         -- Call hook
         timer.Simple(0.4, function() -- Load everything before calling hooks!
-            hook.Run(self.base.id .. "_run_" .. eventName)
+            hook.Run(self.instance.id .. "_run_" .. eventName)
         end)
     end
 end
@@ -240,7 +240,7 @@ function SEv.Event:SetCall(eventNameIn, initFunc)
         table.insert(self.loadingOrder, eventNameIn)
     end
 
-    hook.Run(self.base.id .. "_add_" .. eventNameIn)
+    hook.Run(self.instance.id .. "_add_" .. eventNameIn)
     self.list[eventNameIn] = { func = initFunc, enabled = isEnabled }
 end
 
@@ -275,11 +275,11 @@ end
 -- Load event tiers
 function SEv.Event:InitializeTier()
     local maxTier = self:GetMaxPossibleTier()
-    local tier = GetConVar(self.base.id .. "_tier"):GetInt()
+    local tier = GetConVar(self.instance.id .. "_tier"):GetInt()
 
     -- Force players to roll back to the higher valid tier
-    if SERVER and not self.base.devMode and tier > maxTier then
-        GetConVar(self.base.id .. "_tier"):SetInt(maxTier)
+    if SERVER and not self.instance.devMode and tier > maxTier then
+        GetConVar(self.instance.id .. "_tier"):SetInt(maxTier)
         return
     end
 
@@ -289,13 +289,13 @@ function SEv.Event:InitializeTier()
     -- Include all events
     local curMap = game.GetMap()
     for i=1, tier do
-        local tierFolder = self.base.luaFolder .. "/events/tier" .. i .. "/"
+        local tierFolder = self.instance.luaFolder .. "/events/tier" .. i .. "/"
         local isBaseMap = false
 
-        if self.base.maps == "*" then
+        if self.instance.maps == "*" then
             isBaseMap = true
-        elseif istable(self.base.maps) then
-            if table.HasValue(self.base.maps, curMap) then
+        elseif istable(self.instance.maps) then
+            if table.HasValue(self.instance.maps, curMap) then
                 isBaseMap = true
             end
         end
@@ -309,14 +309,14 @@ function SEv.Event:InitializeTier()
     end
 
     if SERVER then
-        net.Start(self.base.id .. "_event_initialize_tier_cl")
+        net.Start(self.instance.id .. "_event_initialize_tier_cl")
         net.Broadcast()
     end
 end
 
 -- Reload the already loaded events
 function SEv.Event:ReloadCurrent()
-    if SERVER and self.base.devMode then
+    if SERVER and self.instance.devMode then
         for eventName, ent in pairs(self.customEntityList) do
             self.customEntityList[eventName] = {}
         end
@@ -332,8 +332,8 @@ function SEv.Event:ReloadCurrent()
         end
     end
 
-    if SERVER and self.base.devMode then
-        net.Start(self.base.id .. "_event_remove_all_ents_cl")
+    if SERVER and self.instance.devMode then
+        net.Start(self.instance.id .. "_event_remove_all_ents_cl")
         net.Broadcast()
 
         timer.Simple(1, function()
@@ -461,14 +461,14 @@ function SEv.Event:List()
     end
 end
 
--- Base init
-function SEv.Event:InitSh(base)
-    CreateConVar(base.id .. "_tier", "1", { FCVAR_ARCHIVE, FCVAR_REPLICATED })
+-- Instance init
+function SEv.Event:InitSh(instance)
+    CreateConVar(instance.id .. "_tier", "1", { FCVAR_ARCHIVE, FCVAR_REPLICATED })
 
     -- After a cleanup
-    hook.Add("PostCleanupMap", base.id .. "_reload_map_sh", function()
-        base.Event:ReloadCurrent()
+    hook.Add("PostCleanupMap", instance.id .. "_reload_map_sh", function()
+        instance.Event:ReloadCurrent()
     end)
 
-    base.Event.InitSh = nil
+    instance.Event.InitSh = nil
 end

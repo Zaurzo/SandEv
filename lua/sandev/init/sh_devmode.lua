@@ -1,8 +1,8 @@
--- Bases devmode
+-- Instances devmode
 
-function SEv:AddDevModeToBase(base)
-    function base:EnableDevMode()
-        base.devMode = true
+function SEv:AddDevModeToInstance(instance)
+    function instance:EnableDevMode()
+        instance.devMode = true
 
         local function ConvertCVarDataToMemory(any)
             if isnumber(any) then
@@ -16,87 +16,87 @@ function SEv:AddDevModeToBase(base)
             return any
         end
 
-        concommand.Add(base.id .. "_events_toggle", function(ply, cmd, args) base.Event:Toggle(ply, cmd, args) end)
-        concommand.Add(base.id .. "_events_list", function() base.Event:List() end)
-        concommand.Add(base.id .. "_memories_toggle", function(ply, cmd, args) base.Event.Memory:Toggle(ply, cmd, args) end)
-        concommand.Add(base.id .. "_memories_toggle_per_player", function(ply, cmd, args) base.Event.Memory:TogglePerPlayer(ply, cmd, args) end)
-        concommand.Add(base.id .. "_memories_list", function() base.Event.Memory:List() end)
-        concommand.Add(base.id .. "_memories_print_logic", function() base.Event.Memory.Dependency:PrintLogic() end)
-        concommand.Add(base.id .. "_memories_set", function(ply, cmd, args) base.Event.Memory:Set(args[1], ConvertCVarDataToMemory(args[2])) end)
+        concommand.Add(instance.id .. "_events_toggle", function(ply, cmd, args) instance.Event:Toggle(ply, cmd, args) end)
+        concommand.Add(instance.id .. "_events_list", function() instance.Event:List() end)
+        concommand.Add(instance.id .. "_memories_toggle", function(ply, cmd, args) instance.Event.Memory:Toggle(ply, cmd, args) end)
+        concommand.Add(instance.id .. "_memories_toggle_per_player", function(ply, cmd, args) instance.Event.Memory:TogglePerPlayer(ply, cmd, args) end)
+        concommand.Add(instance.id .. "_memories_list", function() instance.Event.Memory:List() end)
+        concommand.Add(instance.id .. "_memories_print_logic", function() instance.Event.Memory.Dependency:PrintLogic() end)
+        concommand.Add(instance.id .. "_memories_set", function(ply, cmd, args) instance.Event.Memory:Set(args[1], ConvertCVarDataToMemory(args[2])) end)
 
         if CLIENT then
-            net.Start(base.id .. "_event_request_all_render_sv")
+            net.Start(instance.id .. "_event_request_all_render_sv")
             net.SendToServer()
 
-            CreateClientConVar(base.id .. "_events_show_names", "0", true, false)
-            CreateClientConVar(base.id .. "_events_render_auto", "0", true, false)
-            SEvPortals.VarDrawDistance = CreateClientConVar(base.id .. "_portal_drawdistance", "3500", true, false, "Sets the size of the portal along the Y axis", 0)
+            CreateClientConVar(instance.id .. "_events_show_names", "0", true, false)
+            CreateClientConVar(instance.id .. "_events_render_auto", "0", true, false)
+            SEvPortals.VarDrawDistance = CreateClientConVar(instance.id .. "_portal_drawdistance", "3500", true, false, "Sets the size of the portal along the Y axis", 0)
 
-            concommand.Add(base.id .. "_events_render", function(ply, cmd, args) base.Event:ToggleRender(ply, cmd, args) end)
-            concommand.Add(base.id .. "_events_render_list", function() base.Event:ListRender() end)
+            concommand.Add(instance.id .. "_events_render", function(ply, cmd, args) instance.Event:ToggleRender(ply, cmd, args) end)
+            concommand.Add(instance.id .. "_events_render_list", function() instance.Event:ListRender() end)
         end
 
-        hook.Run(base.id .. "_devmode", true)
+        hook.Run(instance.id .. "_devmode", true)
         
         if SERVER then
-            RunConsoleCommand("state_devmode_" .. base.id, "1")
+            RunConsoleCommand("state_devmode_" .. instance.id, "1")
         end
     end
 
-    function base:DisableDevMode()
-        base.devMode = false
+    function instance:DisableDevMode()
+        instance.devMode = false
 
-        concommand.Remove(base.id .. "_events_toggle")
-        concommand.Remove(base.id .. "_events_list")
-        concommand.Remove(base.id .. "_memories_toggle")
-        concommand.Remove(base.id .. "_memories_list")
-        concommand.Remove(base.id .. "_memories_print_logic")
-        concommand.Remove(base.id .. "_memories_set")
+        concommand.Remove(instance.id .. "_events_toggle")
+        concommand.Remove(instance.id .. "_events_list")
+        concommand.Remove(instance.id .. "_memories_toggle")
+        concommand.Remove(instance.id .. "_memories_list")
+        concommand.Remove(instance.id .. "_memories_print_logic")
+        concommand.Remove(instance.id .. "_memories_set")
 
         if CLIENT then
-            concommand.Remove(base.id .. "_events_render")
-            concommand.Remove(base.id .. "_events_render_list")
+            concommand.Remove(instance.id .. "_events_render")
+            concommand.Remove(instance.id .. "_events_render_list")
 
             -- Apparently we can't remove cvars.
         end
 
-        hook.Run(base.id .. "_devmode", false)
+        hook.Run(instance.id .. "_devmode", false)
 
         if SERVER then
-            RunConsoleCommand("state_devmode_" .. base.id , "0")
+            RunConsoleCommand("state_devmode_" .. instance.id , "0")
         end
     end
 
-    local devModeState = CreateConVar("state_devmode_" .. base.id , "0", { FCVAR_ARCHIVE, FCVAR_REPLICATED }) -- Just to store the state between games
+    local devModeState = CreateConVar("state_devmode_" .. instance.id , "0", { FCVAR_ARCHIVE, FCVAR_REPLICATED }) -- Just to store the state between games
 
     if SERVER then
-        function base:ToggleDevMode()
-            local toggleFuncName = base.devMode and "DisableDevMode" or "EnableDevMode"
+        function instance:ToggleDevMode()
+            local toggleFuncName = instance.devMode and "DisableDevMode" or "EnableDevMode"
 
-            base[toggleFuncName]()
+            instance[toggleFuncName]()
 
-            net.Start(base.id .. "_toggle_devmode")
+            net.Start(instance.id .. "_toggle_devmode")
             net.WriteString(toggleFuncName)
             net.Broadcast()
 
-            print("[SandEv] " .. base.id .. " devmode is " .. (base.devMode and "On" or "Off"))
+            print("[SandEv] " .. instance.id .. " devmode is " .. (instance.devMode and "On" or "Off"))
         end
 
-        concommand.Add("devmode_" .. base.id .. "_toggle", function() base:ToggleDevMode() end)    
+        concommand.Add("devmode_" .. instance.id .. "_toggle", function() instance:ToggleDevMode() end)    
 
         if devModeState:GetBool() then
-            base:ToggleDevMode()
+            instance:ToggleDevMode()
         end
     else
-        hook.Add(base.id .. "_memories_received", base.id .. "_auto_dev_mode_cl", function()
-            if GetConVar("state_devmode_" .. base.id):GetBool() then
-                base:EnableDevMode()
+        hook.Add(instance.id .. "_memories_received", instance.id .. "_auto_dev_mode_cl", function()
+            if GetConVar("state_devmode_" .. instance.id):GetBool() then
+                instance:EnableDevMode()
             end
         end)
 
-        net.Receive(base.id .. "_toggle_devmode", function()
+        net.Receive(instance.id .. "_toggle_devmode", function()
             local toggleFuncName = net.ReadString()
-            base[toggleFuncName]()
+            instance[toggleFuncName]()
         end)
     end
 end

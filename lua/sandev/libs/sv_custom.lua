@@ -2,7 +2,7 @@
 
 -- Create a path using sev_trigger_path_point and a table of vectors
 local pathIndex = 0
-function SEv.Custom:CreatePath(base, pathVecs, eventName, postionTouchCallback, lastPositionTouchCallback)
+function SEv.Custom:CreatePath(instance, pathVecs, eventName, postionTouchCallback, lastPositionTouchCallback)
     if CLIENT then return end
 
     local pathEnts = {}
@@ -19,7 +19,7 @@ function SEv.Custom:CreatePath(base, pathVecs, eventName, postionTouchCallback, 
         end
 
         local pathEnt = ents.Create("sev_trigger_path_point")
-        pathEnt:Setup(base, eventName, eventName .. "_path_" .. curIndex .. "_" .. k, pathVecs[k], connectionVec)
+        pathEnt:Setup(instance, eventName, eventName .. "_path_" .. curIndex .. "_" .. k, pathVecs[k], connectionVec)
 
         table.insert(pathEnts, pathEnt)
 
@@ -47,7 +47,7 @@ function SEv.Custom:CreatePath(base, pathVecs, eventName, postionTouchCallback, 
 end
 
 -- Proximity trigger
-function SEv.Custom:CreateProximityTrigger(base, eventName, ent, relTriggerPos, height, size, callbackStartTouch, callbackTouch, callbackEndTouch)
+function SEv.Custom:CreateProximityTrigger(instance, eventName, ent, relTriggerPos, height, size, callbackStartTouch, callbackTouch, callbackEndTouch)
     if not isfunction(callbackStartTouch) and not isfunction(callbackTouch) and not isfunction(callbackEndTouch) then return end
     relTriggerPos = relTriggerPos or Vector(0, 0, 0)
 
@@ -60,7 +60,7 @@ function SEv.Custom:CreateProximityTrigger(base, eventName, ent, relTriggerPos, 
     local proximityTriggerId = "sev_proximity_trigger_" .. tostring(proximityTrigger)
 
     local function SetVeryNearTriggerPos(proximityTrigger)
-        proximityTrigger:Setup(base, eventName, "proximityTrigger" .. tostring(proximityTrigger), absTriggerPos + Vector(size, size, height), absTriggerPos + Vector(-size, -size, 0))
+        proximityTrigger:Setup(instance, eventName, "proximityTrigger" .. tostring(proximityTrigger), absTriggerPos + Vector(size, size, height), absTriggerPos + Vector(-size, -size, 0))
     end
 
     SetVeryNearTriggerPos(proximityTrigger)
@@ -102,7 +102,7 @@ function SEv.Custom:CreateProximityTrigger(base, eventName, ent, relTriggerPos, 
     end)
 
     proximityTrigger:CallOnRemove(proximityTriggerId, function()
-        base.Event:RemoveRenderInfoEntity(proximityTrigger)
+        instance.Event:RemoveRenderInfoEntity(proximityTrigger)
     end)
 
     table.insert(ent.proximityTrigger, proximityTrigger)
@@ -301,7 +301,7 @@ end
     Enjoy,
     - Xalalau
 ]]
-function SEv.Custom:CreatePortalAreas(base, eventName, maxAreaTriggersInfo, startTriggersInfo, portalInfo, callbacks)
+function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, startTriggersInfo, portalInfo, callbacks)
     local portals = {}
     local plysInMaxArea = {} -- States: nil: outside, true: inside, false: exiting
     local arePortalsEnabled = false
@@ -311,7 +311,7 @@ function SEv.Custom:CreatePortalAreas(base, eventName, maxAreaTriggersInfo, star
     local function deleteAllPortalEntities(ent)
         for k, ent in ipairs(createdEnts) do
             if ent:IsValid() then
-                base.Event:RemoveRenderInfoEntity(ent)
+                instance.Event:RemoveRenderInfoEntity(ent)
                 ent:Remove()
             end
         end
@@ -335,19 +335,19 @@ function SEv.Custom:CreatePortalAreas(base, eventName, maxAreaTriggersInfo, star
 
     for k, portalPair in ipairs(portalInfo) do
         local portal1Marker = ents.Create("sev_marker")
-        portal1Marker:Setup(base, eventName, eventName .. "Portal1MarkerPair" .. k  .. "_" .. extraId, portalPair[1].pos)
+        portal1Marker:Setup(instance, eventName, eventName .. "Portal1MarkerPair" .. k  .. "_" .. extraId, portalPair[1].pos)
         table.insert(createdEnts, portal1Marker)
 
         if portalPair[2] then
             local portal2Marker = ents.Create("sev_marker")
-            portal2Marker:Setup(base, eventName, eventName .. "Portal2MarkerPair" .. k  .. "_" .. extraId, portalPair[2].pos)
+            portal2Marker:Setup(instance, eventName, eventName .. "Portal2MarkerPair" .. k  .. "_" .. extraId, portalPair[2].pos)
             table.insert(createdEnts, portal2Marker)
         end
     end
 
     for k, startTriggerInfo in ipairs(startTriggersInfo) do
         local portalTrigger = ents.Create("sev_trigger")
-        portalTrigger:Setup(base, eventName, eventName .. "PortalTrigger" .. k  .. "_" .. extraId, startTriggerInfo.vecA, startTriggerInfo.vecB)
+        portalTrigger:Setup(instance, eventName, eventName .. "PortalTrigger" .. k  .. "_" .. extraId, startTriggerInfo.vecA, startTriggerInfo.vecB)
         table.insert(createdEnts, portalTrigger)
 
         function portalTrigger:StartTouch(ent)
@@ -386,7 +386,7 @@ function SEv.Custom:CreatePortalAreas(base, eventName, maxAreaTriggersInfo, star
                         end
                     end)
                     SEv.Ent:BlockPhysgun(portal1, true)
-                    base.Event:SetGameEntity(eventName, portal1)
+                    instance.Event:SetGameEntity(eventName, portal1)
                     table.insert(portals, portal1)
 
                     if portalPair[1].noRender then
@@ -419,7 +419,7 @@ function SEv.Custom:CreatePortalAreas(base, eventName, maxAreaTriggersInfo, star
                         end)
                         SEv.Ent:BlockPhysgun(portal2, true)
                         SEv.Ent:HideInfo(portal2, true)
-                        base.Event:SetGameEntity(eventName, portal2)
+                        instance.Event:SetGameEntity(eventName, portal2)
                         table.insert(portals, portal2)
 
                         if portalPair[2].noRender then
@@ -446,7 +446,7 @@ function SEv.Custom:CreatePortalAreas(base, eventName, maxAreaTriggersInfo, star
 
     for k, maxAreaTriggerInfo in ipairs(maxAreaTriggersInfo) do
         local maxAreaTrigger = ents.Create("sev_trigger")
-        maxAreaTrigger:Setup(base, eventName, eventName .. "MaxAreaTrigger" .. k  .. "_" .. extraId, maxAreaTriggerInfo.vecA, maxAreaTriggerInfo.vecB)
+        maxAreaTrigger:Setup(instance, eventName, eventName .. "MaxAreaTrigger" .. k  .. "_" .. extraId, maxAreaTriggerInfo.vecA, maxAreaTriggerInfo.vecB)
         table.insert(createdEnts, maxAreaTrigger)
 
         SEv.Ent:HideCurse(maxAreaTrigger, true)

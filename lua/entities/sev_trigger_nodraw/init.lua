@@ -3,7 +3,7 @@
 ENT.Base = "base_entity"
 ENT.Type = "brush"
 
-function ENT:Setup(base, eventName, entName, vecA, vecB, keyName)
+function ENT:Setup(instance, eventName, entName, vecA, vecB, keyName)
     self:Spawn()
 
     local vecCenter = (vecA - vecB)/2 + vecB
@@ -42,7 +42,7 @@ function ENT:Setup(base, eventName, entName, vecA, vecB, keyName)
         end)
     end)
 
-    base.Event:SetRenderInfoEntity(self)
+    instance.Event:SetRenderInfoEntity(self)
 end
 
 function ENT:AddEnt(ent)

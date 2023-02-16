@@ -3,7 +3,7 @@
 ENT.Base = "base_entity"
 ENT.Type = "brush"
 
-function ENT:Setup(base, eventName, entName, vecA, vecB)
+function ENT:Setup(instance, eventName, entName, vecA, vecB)
     -- Blink
         -- Requires ent.SetOn and ent.GetOff or ent.Fire("TurnOn") and ent.Fire("TurnOff")
     -- FadeIn and FadeOut
@@ -51,7 +51,7 @@ function ENT:Setup(base, eventName, entName, vecA, vecB)
 
     SEv.Ent:SetCursed(self, true)
 
-    base.Event:SetRenderInfoEntity(self)
+    instance.Event:SetRenderInfoEntity(self)
 end
 
 -- Some entities doesn't active the trigger touch, so we go after them

@@ -24,7 +24,7 @@ surface.CreateFont("SEvEventName", {
 
 -- Event rendering
 function SEv.Event:Render(entRenderInfo)
-    if not self.base.devMode then return end
+    if not self.instance.devMode then return end
 
     -- Render event name
     if self.renderEvent[entRenderInfo.eventName] == nil then
@@ -36,7 +36,7 @@ function SEv.Event:Render(entRenderInfo)
                 return
             end
 
-            if not GetConVar(self.base.id .. "_events_show_names"):GetBool() then return end
+            if not GetConVar(self.instance.id .. "_events_show_names"):GetBool() then return end
 
             local drawposscreen = entRenderInfo.vecCenter:ToScreen()
 
@@ -86,7 +86,7 @@ function SEv.Event:Render(entRenderInfo)
         draw.DrawText(entRenderInfo.entName, "SEvEventName", drawposscreen.x, drawposscreen.y, entRenderInfo.color, TEXT_ALIGN_CENTER)
     end)
 
-    if GetConVar(self.base.id .. "_events_render_auto"):GetBool() then
+    if GetConVar(self.instance.id .. "_events_render_auto"):GetBool() then
         self.renderEvent[entRenderInfo.eventName].enabled = true
     end
 end
@@ -139,57 +139,57 @@ function SEv.Event:ListRender()
     end
 end
 
--- Base init
-function SEv.Event:InitCl(base)
+-- Instance init
+function SEv.Event:InitCl(instance)
     -- Load event tiers by server order
-    net.Receive(base.id .. "_event_initialize_tier_cl", function()
-        base.Event:InitializeTier()
+    net.Receive(instance.id .. "_event_initialize_tier_cl", function()
+        instance.Event:InitializeTier()
     end)
 
     -- Remove events by server order
-    net.Receive(base.id .. "_event_remove_all_cl", function()
-        base.Event:RemoveAll()
+    net.Receive(instance.id .. "_event_remove_all_cl", function()
+        instance.Event:RemoveAll()
 
-        if self.base.devMode then
-            base.Event.renderEvent = {}
+        if self.instance.devMode then
+            instance.Event.renderEvent = {}
         end
     end)
 
-    net.Receive(base.id .. "_event_remove_all_ents_cl", function()
-        if self.base.devMode then
-            base.Event.renderEvent = {}
+    net.Receive(instance.id .. "_event_remove_all_ents_cl", function()
+        if self.instance.devMode then
+            instance.Event.renderEvent = {}
         end
     end)
 
     -- Remove an event by server order
-    net.Receive(base.id .. "_event_remove_cl", function()
+    net.Receive(instance.id .. "_event_remove_cl", function()
         local eventName = net.ReadString()
 
-        base.Event:Remove(eventName)
+        instance.Event:Remove(eventName)
 
-        if self.base.devMode then
-            base.Event.renderEvent[eventName] = nil
+        if self.instance.devMode then
+            instance.Event.renderEvent[eventName] = nil
         end
     end)
 
     -- Receive entity rendering info
-    net.Receive(base.id .. "_event_set_render_cl", function()
-        base.Event:Render(net.ReadTable())
+    net.Receive(instance.id .. "_event_set_render_cl", function()
+        instance.Event:Render(net.ReadTable())
     end)
 
     -- Remove an event entity by server order
-    net.Receive(base.id .. "_event_Remove_render_cl", function()
+    net.Receive(instance.id .. "_event_Remove_render_cl", function()
         local eventName = net.ReadString()
         local entID = net.ReadString()
 
-        if self.base.devMode and base.Event.renderEvent[eventName] then
-            base.Event.renderEvent[eventName][entID] = nil
+        if self.instance.devMode and instance.Event.renderEvent[eventName] then
+            instance.Event.renderEvent[eventName][entID] = nil
         end
     end)
 
     -- Receive all events
     local receivedTab = {}
-    net.Receive(base.id .. "_event_send_all_render_cl", function()
+    net.Receive(instance.id .. "_event_send_all_render_cl", function()
         local currentChunksID = net.ReadString()
         local len = net.ReadUInt(16)
         local chunk = net.ReadData(len)
@@ -209,11 +209,11 @@ function SEv.Event:InitCl(base)
 
             if eventEntTab and istable(eventEntTab) then
                 for k,eventEntInfo in ipairs(eventEntTab) do
-                    base.Event:Render(eventEntInfo)
+                    instance.Event:Render(eventEntInfo)
                 end
             end
         end
     end)
 
-    base.Event.InitCl = nil
+    instance.Event.InitCl = nil
 end

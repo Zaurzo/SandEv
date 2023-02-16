@@ -34,7 +34,7 @@ function SEv.Event.Memory.Dependency:Check(eventName)
     local eventDependencies = self:GetDependents()[eventName]
 
     if eventDependencies then
-        local memories = self.base.Event.Memory:GetList()
+        local memories = self.instance.Event.Memory:GetList()
 
         for memoryName, _ in pairs(eventDependencies) do
             if memories[memoryName] == nil then
@@ -48,7 +48,7 @@ end
 
 -- Pick up which events are active or inactive according to memory dependencies
 function SEv.Event.Memory.Dependency:GetDependentEventsState()
-    local memoryList = self.base.Event.Memory:GetList()
+    local memoryList = self.instance.Event.Memory:GetList()
     local dependentEvents = {
         enabled = {},
         disabled = {}
