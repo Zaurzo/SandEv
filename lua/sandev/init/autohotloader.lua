@@ -42,6 +42,8 @@
             -- Mount SEv on the server
             -- Mount SEv on the client
 
+    After the gma mounting the server will init SEv and clients will do the same thing right after.
+
     Singleplayer and listen or dedicated servers are supported. The code handles changelevels, new players joining the game and
     players returning to the game right after disconnecting.
 
@@ -188,6 +190,7 @@ if SERVER then
     util.AddNetworkString("sev_request_mount_on_cl")
     util.AddNetworkString("sev_is_dedicated")
     util.AddNetworkString("sev_request_addcslua_extra_dedicated")
+    util.AddNetworkString("sev_init")
 end
 
 local isDedicated = game.IsDedicated() -- game.IsDedicated() is always false on the client, so I "fix" it later
@@ -207,25 +210,7 @@ local hotloaderLogging
 local isSEvMounted = false
 local hotloaderAddonInfo = {}
 local hotloadedExtraAddCSLua = {} -- Used on dedicated servers only
-
--- Note: these timers are AWFUL and I hate how the loader functions call each order in sequence.
---       If someone wants to use this code to make a better generic one, I'd appreciate it. -Xala
-
--- This delay prevents net overflows when the map starts
-local delaySendGma = 0.3
--- Check if the gma is fully mounted. Some time is needed so the game can
--- adapt to the new content
-local delayCheckMountedFiles = 1.5
--- Mount the gma on client on dedicated servers. Must run after the mounted
--- files are checked because it's the same time we start to include them. We
--- can't include the client content before the server.
-local delayDedicatedMountCl = delayCheckMountedFiles + 0.5
--- Initialize SandEv (shared). An extra delay so we can wait for the gma to be
--- fully mounted. It's applied both on server and client.
--- Must be at least 1s bigger than delayCheckMountedFiles
-local delayStartSandev = (1 + delayCheckMountedFiles) + 1.5
--- Remove temp detours after SandEv initialization
-local delayRemoveTempDetours = delayDedicatedMountCl + delayStartSandev + 10
+local totalMountedFiles = 0
 
 -- SEv info
 local SEVInitFile = "autorun/sev_init.lua"
@@ -427,6 +412,93 @@ function SHL:HotloadTools(gmaTitle)
     end
 end
 
+-- Initialize SEV. The gma must be already mounted and all the Lua files included.
+function SHL:InitSEv()
+    -- If SEv is mounted and it's SERVER, broadcast init to make new players start their init
+    if isSEvMounted then
+        if SERVER then
+            net.Start("sev_init")
+            net.Broadcast()
+        end
+
+        return
+    end
+
+    -- Init SEv portals
+    if CLIENT then
+        local sev_portal_init = hook.GetTable()["InitPostEntity"]["sev_portal_init"]
+        sev_portal_init()
+    end
+
+    -- Init SEv
+    local sev_init = hook.GetTable()["InitPostEntity"]["sev_init"]
+
+    if isDedicated then
+        -- AddCSLuaFile doesn't work with hotloaded files on dedicated servers, so I send
+        -- the file contents to clients so them can include the code when the it's needed
+        if SERVER then
+            sev_init()
+
+            local compressedString = util.Compress(util.TableToJSON(hotloadedExtraAddCSLua))
+            SendData("sandev_addcslua_extra_dedicated", compressedString, "ReceivedExtraAddCSLua")
+        else
+            net.Start("sev_request_addcslua_extra_dedicated")
+            net.SendToServer()
+        end
+    else
+        sev_init()
+
+        if SERVER then
+            net.Start("sev_init")
+            net.Broadcast()
+        end
+    end
+
+    -- At this point SandEv is fully mounted
+    isSEvMounted = true
+
+    -- Remove temporary detours
+    timer.Simple(1, function()
+        AddCSLuaFile = AddCSLuaFileOriginal
+        include = includeOriginal
+    end)
+end
+
+net.Receive("sev_init", function()
+    if CLIENT then
+        timer.Simple(totalMountedFiles * (not game.SinglePlayer() and 0.005 or 0), function()
+            SHL:InitSEv()
+        end)
+    else
+        SHL:InitSEv()
+    end
+end)
+
+-- Client requests addcslua info from the server to finish hotloading the SandEv
+if SERVER then
+    net.Receive("sev_request_addcslua_extra_dedicated", function(len, ply)
+        local compressedString = util.Compress(util.TableToJSON(hotloadedExtraAddCSLua))
+        SendData("sandev_addcslua_extra_dedicated", compressedString, "ReceivedExtraAddCSLua", ply)
+    end)
+end
+
+-- AddCSLua for files added by the SandEv bases system
+-- This function is only used on dedicated servers
+-- DO NOT call directly!! It's a callback for the SendData function
+function ReceivedExtraAddCSLua(data)
+    if SERVER or not isDedicated or isSEvMounted then return end
+
+    hotloadedExtraAddCSLua = util.JSONToTable(util.Decompress(data))
+
+    -- Mount SEv
+    local sev_init = hook.GetTable()["InitPostEntity"]["sev_init"]
+
+    sev_init()
+
+    -- At this point SandEv is fully mounted
+    isSEvMounted = true
+end
+
 function SHL:HotloadSEv(gmaTitle)
     -- Note: WSHL_* vars are workarounds to solve Midgame Workshop Hotloader conflicts
     -- Zaurzo added them while he's rewriting his tool so we can coexist right now
@@ -501,62 +573,6 @@ function SHL:HotloadSEv(gmaTitle)
 
     -- Load new scripted entities
     SHL:HotloadEntities(gmaTitle, "entities", "ENT", scripted_ents)
-
-    -- At this point SandEv is fully mounted
-    isSEvMounted = true
-
-    -- Start SandEv
-    timer.Simple(delayStartSandev, function()
-        if CLIENT then
-            local sev_portal_init = hook.GetTable()["InitPostEntity"]["sev_portal_init"]
-            sev_portal_init()
-        end
-
-        local sev_init = hook.GetTable()["InitPostEntity"]["sev_init"]
-
-        if isDedicated then
-            if SERVER then
-                sev_init()
-
-                local compressedString = util.Compress(util.TableToJSON(hotloadedExtraAddCSLua))
-                SendData("sandev_addcslua_extra_dedicated", compressedString, "ReceivedExtraAddCSLua", nil)
-            else
-                net.Start("sev_request_addcslua_extra_dedicated")
-                net.SendToServer()
-            end
-        else
-            sev_init()
-        end
-    end)
-
-    -- Remove temporary detours
-    timer.Simple(delayRemoveTempDetours, function()
-        AddCSLuaFile = AddCSLuaFileOriginal
-        include = includeOriginal
-    end)
-end
-
--- Client requests addcslua info from the server to finish hotloading the SandEv
-if SERVER then
-    net.Receive("sev_request_addcslua_extra_dedicated", function(len, ply)
-        local compressedString = util.Compress(util.TableToJSON(hotloadedExtraAddCSLua))
-        SendData("sandev_addcslua_extra_dedicated", compressedString, "ReceivedExtraAddCSLua", nil)
-    end)
-end
-
--- AddCSLua for files added by the SandEv bases system
--- This function is only used on dedicated servers
--- DO NOT call directly!! It's a callback for the SendData function
-function ReceivedExtraAddCSLua(data)
-    if SERVER or not isDedicated then return end
-
-    hotloadedExtraAddCSLua = util.JSONToTable(util.Decompress(data))
-
-    local sev_init = hook.GetTable()["InitPostEntity"]["sev_init"]
-
-    timer.Simple(delayDedicatedMountCl, function()
-        sev_init()
-    end)
 end
 
 -- Mount a gma file
@@ -566,7 +582,7 @@ function SHL:MountSEv(path)
     end
 
     -- If SEv is already mounted on the server ignore the request and try
-    -- to mount it on new players (The "sev_mount" net ignores players with
+    -- to mount it on new players (The "sev_mount" net also ignores players with
     -- a mounted SandEv)
     if SERVER and SEv then
         net.Start("sev_mount")
@@ -578,36 +594,27 @@ function SHL:MountSEv(path)
     local isMounted, files = game.MountGMA(path)
     local gmaTitle = GetGMATitle(file.Open(path, "rb", "GAME"))
 
+    totalMountedFiles = #files
+
     if not isMounted then
         print("Error trying to hotload sandev")
         return
     end
 
-    -- Check wether the mounted files are accessible or not
-    local mountedFiles = 0
-    local retries = 10
-    timer.Create(path, delayCheckMountedFiles, 0, function() -- It's very important that we wait here, the files need this time to successfully mount.
-        for k, _file in ipairs(files) do
-            if file.Exists(_file, "GAME") then
-                SHL:ShowLog("[file.Exists]: " .. _file)
-                mountedFiles = mountedFiles + 1
-            end
-        end
+    SHL:HotloadSEv(gmaTitle)
 
-        -- If so, start the hotloading process
-        if mountedFiles == #files or retries == 0 then
-            SHL:HotloadSEv(gmaTitle)
-
-            if SERVER then
-                net.Start("sev_mount")
-                net.Broadcast()
-            end
-
-            timer.Remove(path)
-        end
-
-        retries = retries - 1
-    end)
+    -- After ther server is finished we have to mount SEv on clients
+    if SERVER then
+        -- On servers we need to wait a bit to AddCSLuaFile be finished before going ahead
+        timer.Simple(totalMountedFiles * (not game.SinglePlayer() and 0.005 or 0), function()
+            net.Start("sev_mount")
+            net.Broadcast()
+        end)
+    -- Clients need to go through the server before initing SEv because the server must init before them
+    else
+        net.Start("sev_init")
+        net.SendToServer()
+    end
 end
 
 if CLIENT then
@@ -677,9 +684,7 @@ net.Receive("sev_request_gma", function()
         local gmaContent = gmaCopy:Read(gmaCopy:Size())
         gmaCopy:Close()
 
-        timer.Simple(delaySendGma, function()
-            SendData("sandev_gma", gmaContent, callbackName, nil)
-        end)
+        SendData("sandev_gma", gmaContent, callbackName, nil)
     end
 end)
 
