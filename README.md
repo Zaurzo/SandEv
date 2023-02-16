@@ -1,4 +1,4 @@
-# SandEv - Sandbox Events System
+# SandEv - Sandbox Events Base
 
 For now I'm leaving information on the GMod Workshop page:
 
