@@ -47,7 +47,7 @@ end
 
 hook.Add("InitPostEntity", "sev_portal_init", function()
     for k, v in ipairs(ents.FindByClass("sev_portal")) do
-        self:IncrementPortal()
+        v:IncrementPortal()
         startUpdateMesh(v)
     end
 
