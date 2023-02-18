@@ -223,8 +223,8 @@ end
         sizeY = float               -- Scale Y
         sizeZ = float               -- Scale Z
         maxUsage = integer          -- The maximum number of times a portal or mirror can be passed through before it closes on its own
-        disableRender = bool        -- Don't render the portal. Useful in perfectly similar environments or to use over map mirrors
-        disablePropTeleport = bool   -- Default true. If props will be teleported
+        disableRender = bool        -- Default false. Don't render the portal. Useful in perfectly similar environments or to use over map mirrors
+        disablePropTeleport = bool  -- Default false. If props will be teleported
         enableFunneling = bool      -- Default false. If players will be pulled to the portal
 
     Portal example:
