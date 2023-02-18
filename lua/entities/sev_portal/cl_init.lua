@@ -106,7 +106,7 @@ end
 local drawMat1 = Material("models/props_combine/combine_interface_disp")
 local drawMat2 = Material("null")
 function ENT:Draw()
-    if self:GetNWBool("BlockRendering", false) then return end
+    if self:GetNWBool("disableRender", false) then return end
     if not SEvPortals.PortalMaterials then return end
 
     local backAmt = 3 * self:GetExitSize()[3]

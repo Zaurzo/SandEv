@@ -6,8 +6,7 @@
 --              - Xalalau
 
 SEvPortals = {
-    portalIndex = 0,
-    enableFunneling = false
+    portalIndex = 0
 }
 
 ENT.Type = "anim"

@@ -267,7 +267,6 @@ end)
 local searchPortalsRadius = 2000 -- Longer seek distances make reentry smoother
 local angleRange = math.pi / 6 -- 60º
 hook.Add("Move", "sev_portal_funneling", function(ply, move)
-    if not SEvPortals.enableFunneling then return end
     if not SEvPortals or SEvPortals.portalIndex < 1 then return end
 
     local velVec = move:GetVelocity()
@@ -281,7 +280,7 @@ hook.Add("Move", "sev_portal_funneling", function(ply, move)
         local selectedPortal
         local lastDistSqr = 1/0 -- infinite
         for _, portal in ipairs(foundPortals) do
-            if SEv.Ent:GetRealClass(portal) == "sev_portal" then
+            if SEv.Ent:GetRealClass(portal) == "sev_portal" and portal:GetNWBool("enableFunneling", false) then
                 local portalDownVec = -portal:GetUp()
                 local distVec = portal:GetPos() - ply:GetPos()
                 local angleBetweenDistAndPortalDownVecs = math.acos(

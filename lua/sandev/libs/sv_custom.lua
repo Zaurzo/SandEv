@@ -217,13 +217,15 @@ end
         local portalInfo = { {} }, { {} }, ...
 
     This is the portal information:
-        pos = Vector       -- Center position
-        ang = Angle        -- Angle
-        sizeX = float      -- Scale X
-        sizeY = float      -- Scale Y
-        sizeZ = float      -- Scale Z
-        noRender = bool    -- Don't render the portal. Useful in perfectly similar environments or to use over map mirrors
-        maxUsage = integer -- The maximum number of times a portal or mirror can be passed through before it closes on its own
+        pos = Vector                -- Center position
+        ang = Angle                 -- Angle
+        sizeX = float               -- Scale X
+        sizeY = float               -- Scale Y
+        sizeZ = float               -- Scale Z
+        maxUsage = integer          -- The maximum number of times a portal or mirror can be passed through before it closes on its own
+        disableRender = bool        -- Don't render the portal. Useful in perfectly similar environments or to use over map mirrors
+        disablePropTeleport = bool   -- Default true. If props will be teleported
+        enableFunneling = bool      -- Default false. If players will be pulled to the portal
 
     Portal example:
         local portalInfo = {
@@ -255,7 +257,7 @@ end
                 sizeX = 2.14,
                 sizeY = 12.87,
                 sizeZ = 1.1,
-                noRender = true -- Positioned on top of the map mirror
+                disableRender = true -- Positioned on top of the map mirror
             }
         }
 
@@ -389,8 +391,14 @@ function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, 
                     instance.Event:SetGameEntity(eventName, portal1)
                     table.insert(portals, portal1)
 
-                    if portalPair[1].noRender then
-                        portal1:SetNWBool("BlockRendering", true)
+                    if isbool(portalPair[1].disablePropTeleport) then
+                        portal1:SetNWBool("disablePropTeleport", portalPair[1].disablePropTeleport)
+                    end
+                    if isbool(portalPair[1].enableFunneling) then
+                        portal1:SetNWBool("enableFunneling", portalPair[1].enableFunneling)
+                    end
+                    if isbool(portalPair[1].disableRender) then
+                        portal1:SetNWBool("disableRender", portalPair[1].disableRender)
                     end
 
                     local portal2
@@ -422,8 +430,14 @@ function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, 
                         instance.Event:SetGameEntity(eventName, portal2)
                         table.insert(portals, portal2)
 
-                        if portalPair[2].noRender then
-                            portal2:SetNWBool("BlockRendering", true)
+                        if isbool(portalPair[2].disablePropTeleport) then
+                            portal2:SetNWBool("disablePropTeleport", portalPair[2].disablePropTeleport)
+                        end
+                        if isbool(portalPair[2].enableFunneling) then
+                            portal2:SetNWBool("enableFunneling", portalPair[2].enableFunneling)
+                        end
+                        if isbool(portalPair[2].disableRender) then
+                            portal2:SetNWBool("disableRender", portalPair[2].disableRender)
                         end
                     else
                         SEv.Ent:SetFakeClass(portal1, "func_reflective_glass")

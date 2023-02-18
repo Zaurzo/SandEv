@@ -24,7 +24,7 @@ timer.Create("sev_portals_ent_update", 0.5, 0, function()
             local closestPortal = nil
 
             for k, portal in ipairs(portals) do
-                if portal:IsValid() then
+                if portal:IsValid() and not portal:GetNWBool("disablePropTeleport", false) then
                     local dist = realPos:DistToSqr(portal:GetPos())
 
                     if (dist < closestPortalDist or k == 1) and portal:GetExitPortal() and portal:GetExitPortal():IsValid() then
@@ -76,7 +76,7 @@ hook.Add("Tick", "sev_portal_teleport", function()
 
         local hitPortal = tr.Entity
 
-        if SEv.Ent:GetRealClass(hitPortal) ~= "sev_portal" then return end
+        if SEv.Ent:GetRealClass(hitPortal) ~= "sev_portal" or hitPortal:GetNWBool("disablePropTeleport", false) then return end
 
         local hitPortalExit = tr.Entity:GetExitPortal()
         if hitPortalExit and hitPortalExit:IsValid() and obbMax[1] < hitPortal:GetExitSize()[1] * 45 and obbMax[2] < hitPortal:GetExitSize()[2] * 45 and prop:GetVelocity():Dot(hitPortal:GetUp()) < -0.5 then
