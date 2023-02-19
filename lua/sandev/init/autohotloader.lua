@@ -467,7 +467,7 @@ end
 
 net.Receive("sev_init", function()
     if CLIENT then
-        timer.Simple(totalMountedFiles * delayPerFile), function()
+        timer.Simple(totalMountedFiles * delayPerFile, function()
             SHL:InitSEv()
         end)
     else
@@ -607,8 +607,7 @@ function SHL:MountSEv(path)
     -- After ther server is finished we have to mount SEv on clients
     if SERVER then
         -- On servers we need to wait a bit to AddCSLuaFile be finished before going ahead
-        timer.Simple(totalMountedFiles * delayPerFile), function()
-            net.Start("sev_mount")
+        timer.Simple(totalMountedFiles * delayPerFile, function()
             net.Broadcast()
         end)
     -- Clients need to go through the server before initing SEv because the server must init before them
