@@ -58,11 +58,6 @@
 -- Auxiliar functions copied or adapted from SandEv
 -- ------------------------------------------------------------------------
 
--- Add the network name to be used by the SendData function
-if SERVER then
-    util.AddNetworkString("hotloader_net_send_string")
-end
-
 -- Send huge binary
 local sendTab = {}
 local function SendData(chunksID, data, callbackName, toPly)
@@ -89,7 +84,8 @@ local function SendData(chunksID, data, callbackName, toPly)
 
             local isLastChunk = i == totalChunks
 
-            net.Start("hotloader_net_send_string")
+            net.Start("sev_hotloader_continue")
+            net.WriteString("sev_hotloader_net_send_string")
             net.WriteString(chunksID)
             net.WriteUInt(sendTab[chunksID], 32)
             net.WriteUInt(#chunk, 16)
@@ -118,14 +114,7 @@ local function SendData(chunksID, data, callbackName, toPly)
 end
 
 local receivedTab = {}
-net.Receive("hotloader_net_send_string", function()
-    local chunksID = net.ReadString()
-    local chunksSubID = net.ReadUInt(32)
-    local len = net.ReadUInt(16)
-    local chunk = net.ReadData(len)
-    local isLastChunk = net.ReadBool()
-    local callbackName = net.ReadString() -- Empty until isLastChunk is true.
-
+local function NET_ReceiveData(chunksID, chunksSubID, len, chunk, isLastChunk, callbackName)
     -- Initialize streams or reset overwriten ones
     if not receivedTab[chunksID] or receivedTab[chunksID].chunksSubID ~= chunksSubID then
         receivedTab[chunksID] = {
@@ -148,7 +137,7 @@ net.Receive("hotloader_net_send_string", function()
 
         _G[callbackName](data)
     end
-end)
+end
 
 -- Get gma title, which is used as the mounted addon folder name on the root gmod dir
 --   Src: https://github.com/Facepunch/gmad/blob/master/src/create_gmad.cpp#L60
@@ -182,15 +171,7 @@ end
 -- ------------------------------------------------------------------------
 
 if SERVER then
-    util.AddNetworkString("sev_mount")
-    util.AddNetworkString("sev_send_addon_info_to_sv")
-    util.AddNetworkString("sev_get_addon_info_from_sv")
-    util.AddNetworkString("sev_send_addon_info_to_cl")
-    util.AddNetworkString("sev_request_gma")
-    util.AddNetworkString("sev_request_mount_on_cl")
-    util.AddNetworkString("sev_is_dedicated")
-    util.AddNetworkString("sev_request_addcslua_extra_dedicated")
-    util.AddNetworkString("sev_init")
+    util.AddNetworkString("sev_hotloader_continue") -- I'm just using a single net string because the hotloader only runs once. Change requested by Zaurzo.
 end
 
 local isDedicated = game.IsDedicated() -- game.IsDedicated() is always false on the client, so I "fix" it later
@@ -418,7 +399,8 @@ function SHL:InitSEv()
     -- If SEv is mounted and it's SERVER, broadcast init to make new players start their init
     if isSEvMounted then
         if SERVER then
-            net.Start("sev_init")
+            net.Start("sev_hotloader_continue")
+            net.WriteString("sev_init")
             net.Broadcast()
         end
 
@@ -443,14 +425,16 @@ function SHL:InitSEv()
             local compressedString = util.Compress(util.TableToJSON(hotloadedExtraAddCSLua))
             SendData("sandev_addcslua_extra_dedicated", compressedString, "ReceivedExtraAddCSLua")
         else
-            net.Start("sev_request_addcslua_extra_dedicated")
+            net.Start("sev_hotloader_continue")
+            net.WriteString("sev_request_addcslua_extra_dedicated")
             net.SendToServer()
         end
     else
         sev_init()
 
         if SERVER then
-            net.Start("sev_init")
+            net.Start("sev_hotloader_continue")
+            net.WriteString("sev_init")
             net.Broadcast()
         end
     end
@@ -465,7 +449,7 @@ function SHL:InitSEv()
     end)
 end
 
-net.Receive("sev_init", function()
+local function NET_Init()
     if CLIENT then
         timer.Simple(totalMountedFiles * delayPerFile, function()
             SHL:InitSEv()
@@ -473,14 +457,14 @@ net.Receive("sev_init", function()
     else
         SHL:InitSEv()
     end
-end)
+end
 
 -- Client requests addcslua info from the server to finish hotloading the SandEv
-if SERVER then
-    net.Receive("sev_request_addcslua_extra_dedicated", function(len, ply)
-        local compressedString = util.Compress(util.TableToJSON(hotloadedExtraAddCSLua))
-        SendData("sandev_addcslua_extra_dedicated", compressedString, "ReceivedExtraAddCSLua", ply)
-    end)
+local function NET_RequestAddcsluaExtraDedicated()
+    if CLIENT then return end
+
+    local compressedString = util.Compress(util.TableToJSON(hotloadedExtraAddCSLua))
+    SendData("sandev_addcslua_extra_dedicated", compressedString, "ReceivedExtraAddCSLua", ply)
 end
 
 -- AddCSLua for files added by the SandEv instances system
@@ -586,7 +570,8 @@ function SHL:MountSEv(path)
     -- to mount it on new players (The "sev_mount" net also ignores players with
     -- a mounted SandEv)
     if SERVER and SEv then
-        net.Start("sev_mount")
+        net.Start("sev_hotloader_continue")
+        net.WriteString("sev_mount")
         net.Broadcast()
         return
     end
@@ -608,21 +593,24 @@ function SHL:MountSEv(path)
     if SERVER then
         -- On servers we need to wait a bit to AddCSLuaFile be finished before going ahead
         timer.Simple(totalMountedFiles * delayPerFile, function()
+            net.Start("sev_hotloader_continue")
+            net.WriteString("sev_mount")
             net.Broadcast()
         end)
     -- Clients need to go through the server before initing SEv because the server must init before them
     else
-        net.Start("sev_init")
+        net.Start("sev_hotloader_continue")
+        net.WriteString("sev_init")
         net.SendToServer()
     end
 end
 
-if CLIENT then
-    net.Receive("sev_mount", function()
-        if not SEv then
-            SHL:MountSEv()
-        end
-    end)
+local function NET_Mount()
+    if SERVER then return end
+
+    if not SEv then
+        SHL:MountSEv()
+    end
 end
 
 -- The server received an updated SEv gma from a client
@@ -676,9 +664,8 @@ function SHL:GetStoredAddonInfo()
 end
 
 -- Send a updated SEv gma to the server if requested
-net.Receive("sev_request_gma", function()
+local function NET_RequestGMA(callbackName)
     local gmaCopy = file.Open(SEVGMA, "rb", "DATA")
-    local callbackName = net.ReadString()
 
     if gmaCopy then
         local gmaContent = gmaCopy:Read(gmaCopy:Size())
@@ -686,38 +673,41 @@ net.Receive("sev_request_gma", function()
 
         SendData("sandev_gma", gmaContent, callbackName, nil)
     end
-end)
+end
 
 -- Check if the server cached SEv exists and is updated
 -- Request a updated gma otherwise
-if SERVER then
-    net.Receive("sev_send_addon_info_to_sv", function(len, ply)
-        local addonInfo = net.ReadTable()
-        local updated = sandevInfo.updated
+local function NET_SendAddonInfoToSV(ply, addonInfo)
+    if CLIENT then return end
 
-        if not SEv then
-            SHL:SaveSEvAddonInfo(addonInfo)
-            SHL:AddAddonInfo(addonInfo)
-        end
+    local updated = sandevInfo.updated
 
-        if not SEv and addonInfo.updated > tonumber(updated) then
-            net.Start("sev_request_gma")
-            net.WriteString("ReceivedSEvGMA")
-            net.Send(ply)
-        else
-            SHL:MountSEv()
-        end
-    end)
+    if not SEv then
+        SHL:SaveSEvAddonInfo(addonInfo)
+        SHL:AddAddonInfo(addonInfo)
+    end
 
-    net.Receive("sev_get_addon_info_from_sv", function(len, ply)
-        local addonInfo = SHL:GetStoredAddonInfo()
-
-        net.Start("sev_send_addon_info_to_cl")
-        net.WriteTable(addonInfo)
-        net.WriteBool(isSEvMounted)
-        net.WriteBool(isDedicated)
+    if not SEv and addonInfo.updated > tonumber(updated) then
+        net.Start("sev_hotloader_continue")
+        net.WriteString("sev_request_gma")
+        net.WriteString("ReceivedSEvGMA")
         net.Send(ply)
-    end)
+    else
+        SHL:MountSEv()
+    end
+end
+
+local function NET_GetAddonInfoFromSV(ply)
+    if CLIENT then return end
+
+    local addonInfo = SHL:GetStoredAddonInfo()
+
+    net.Start("sev_hotloader_continue")
+    net.WriteString("sev_send_addon_info_to_cl")
+    net.WriteTable(addonInfo)
+    net.WriteBool(isSEvMounted)
+    net.WriteBool(isDedicated)
+    net.Send(ply)
 end
 
 -- Download the SEv version beign used by the server
@@ -733,7 +723,8 @@ function SHL:DownloadSEvFromServer(SVAddonInfo)
     SHL:SaveSEvAddonInfo(SVAddonInfo)
 
     -- Request SEv
-    net.Start("sev_request_gma")
+    net.Start("sev_hotloader_continue")
+    net.WriteString("sev_request_gma")
     net.WriteString("DownloadedSEvFromServer")
     net.SendToServer()
 end
@@ -781,7 +772,8 @@ function SHL:DownloadSEvFromWorkshop(result)
         SHL:SaveSEvAddonInfo(addonInfo)
 
         -- Mount SEv
-        net.Start("sev_send_addon_info_to_sv")
+        net.Start("sev_hotloader_continue")
+        net.WriteString("sev_send_addon_info_to_sv")
         net.WriteTable(addonInfo)
         net.SendToServer()
     end)
@@ -802,7 +794,8 @@ function SHL:LoadCachedSEv(isMountedOnServer)
     if isMountedOnServer then
         SHL:MountSEv()
     else
-        net.Start("sev_send_addon_info_to_sv")
+        net.Start("sev_hotloader_continue")
+        net.WriteString("sev_send_addon_info_to_sv")
         net.WriteTable(addonInfo)
         net.SendToServer()    
     end
@@ -843,6 +836,14 @@ function SHL:DownloadSEv(SVAddonInfo, isMountedOnSv)
     end)
 end
 
+local function NET_SendAddonInfoToCL(SVAddonInfo, isMountedOnSv, isDedicatedSV)
+    if SERVER then return end
+
+    isDedicated = isDedicatedSV
+
+    SHL:DownloadSEv(SVAddonInfo, isMountedOnSv)
+end
+
 function StartSEvHotload(enableLogging)
     hotloaderLogging = enableLogging
 
@@ -870,19 +871,45 @@ function StartSEvHotload(enableLogging)
     -- Get the server state and start the hotload
     if CLIENT then
         timer.Simple(0.2, function() -- Forces the net to work
-            net.Start("sev_get_addon_info_from_sv")
+            net.Start("sev_hotloader_continue")
+            net.WriteString("sev_get_addon_info_from_sv")
             net.SendToServer()
-        end)
-
-        net.Receive("sev_send_addon_info_to_cl", function(len, ply)
-            local SVAddonInfo = net.ReadTable()
-            local isMountedOnSv = net.ReadBool()
-            isDedicated = net.ReadBool()
-
-            SHL:DownloadSEv(SVAddonInfo, isMountedOnSv)
         end)
     end
 end
+
+net.Receive("sev_hotloader_continue", function(len, ply)
+    local call = net.ReadString()
+
+    if call == "sev_hotloader_net_send_string" then
+        local chunksID = net.ReadString()
+        local chunksSubID = net.ReadUInt(32)
+        local len = net.ReadUInt(16)
+        local chunk = net.ReadData(len)
+        local isLastChunk = net.ReadBool()
+        local callbackName = net.ReadString() -- Empty until isLastChunk is true.
+        NET_ReceiveData(chunksID, chunksSubID, len, chunk, isLastChunk, callbackName)
+    elseif call == "sev_mount" then
+        NET_Mount()
+    elseif call == "sev_send_addon_info_to_sv" then
+        local addonInfo = net.ReadTable()
+        NET_SendAddonInfoToSV(ply, addonInfo)
+    elseif call == "sev_get_addon_info_from_sv" then
+        NET_GetAddonInfoFromSV(ply)
+    elseif call == "sev_send_addon_info_to_cl" then
+        local SVAddonInfo = net.ReadTable()
+        local isMountedOnSv = net.ReadBool()
+        local isDedicated = net.ReadBool()
+        NET_SendAddonInfoToCL(SVAddonInfo, isMountedOnSv, isDedicated)
+    elseif call == "sev_request_gma" then
+        local callbackName = net.ReadString()
+        NET_RequestGMA(callbackName)
+    elseif call == "sev_request_addcslua_extra_dedicated" then
+        NET_RequestAddcsluaExtraDedicated()
+    elseif call == "sev_init" then
+        NET_Init()
+    end
+end)
 
 -- Restore addon info and state after a map changelevel
 if SEv then
