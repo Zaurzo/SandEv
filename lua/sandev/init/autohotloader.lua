@@ -211,6 +211,7 @@ local isSEvMounted = false
 local hotloaderAddonInfo = {}
 local hotloadedExtraAddCSLua = {} -- Used on dedicated servers only
 local totalMountedFiles = 0
+local delayPerFile = not game.SinglePlayer() and 0.012 or 0
 
 -- SEv info
 local SEVInitFile = "autorun/sev_init.lua"
@@ -466,7 +467,7 @@ end
 
 net.Receive("sev_init", function()
     if CLIENT then
-        timer.Simple(totalMountedFiles * (not game.SinglePlayer() and 0.005 or 0), function()
+        timer.Simple(totalMountedFiles * delayPerFile), function()
             SHL:InitSEv()
         end)
     else
@@ -606,7 +607,7 @@ function SHL:MountSEv(path)
     -- After ther server is finished we have to mount SEv on clients
     if SERVER then
         -- On servers we need to wait a bit to AddCSLuaFile be finished before going ahead
-        timer.Simple(totalMountedFiles * (not game.SinglePlayer() and 0.005 or 0), function()
+        timer.Simple(totalMountedFiles * delayPerFile), function()
             net.Start("sev_mount")
             net.Broadcast()
         end)
