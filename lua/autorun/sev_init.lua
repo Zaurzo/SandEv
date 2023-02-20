@@ -2,12 +2,13 @@
     SandEv or SEv - Sandbox Events System
     'Cause Hammer alone is not enough
 
-    By Xalalau Xubilozo, 2021 - 2023
+    Project by Xalalau Xubilozo
 
-    Anomaly Research Center (A.R.C.) Exploration, 2022 - 2023
-    Revealing and exposing curses.
-    Collaborators:
-        Zaurzo - https://steamcommunity.com/profiles/76561198809606958
+    Anomaly Research Center (A.R.C.)
+    Revealing and exposing curses
+        Collaborators:
+            Zaurzo
+            TheEndBoss
 
     MIT License
 ]]
