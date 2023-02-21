@@ -16,6 +16,9 @@ util.AddNetworkString("sev_set_arctics_night_vision")
 util.AddNetworkString("sev_drop_night_vision_goggles")
 util.AddNetworkString("sev_drop_night_vision_goggles_inspired")
 
+-- Ents
+util.AddNetworkString("sev_protect_ent_remove")
+
 -- Effects
 util.AddNetworkString("sev_create_sparks")
 util.AddNetworkString("sev_create_smoke_stream")

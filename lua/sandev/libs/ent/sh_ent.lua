@@ -276,3 +276,147 @@ function SEv.Ent:CallOnCondition(ent, condition, callback, ...)
         callback(unpack(args))
     end)
 end
+
+-- Protect from ent_remove and ent_remove_all commands
+
+--[[
+    This is how ent_remove(_all) works:
+
+    -- CC_Ent_Remove https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/game/server/baseentity.cpp#L5041
+        -- searchs for class if arg 1 is defined
+        -- calls FindPickerEntity() if not https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/game/server/player.cpp#L5776
+            -- it tries to trace a hull to an entity, which looks like gmod's util.TraceHull https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/game/server/player.cpp#L5738
+            -- if it fails them FindEntityNearestFacing is called with 55 degrees (0.96 rad) https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/game/server/entitylist.cpp#L1043
+
+            -- Note: Util_TraceLine: https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/game/shared/util_shared.h#L249
+
+    To make the trace ignore my protected entities I'm using SetSolid.
+    To make the command argument useless I'm changing the entities classes.
+    to make FindEntityNearestFacing break I'm pretending all my entities are the world.
+
+    There's a special case where the player binds the command, but here I can work with traces and prevent the the command execution.
+
+    ~~~~ By Zaurzo and Xalalau. Zaurzo said: "we got the big boy out of the way". I agree.
+]]
+
+if CLIENT then
+    -- CreateMove works even in singleplayer with the game paused
+    hook.Add("CreateMove", "sev_block_ent_remove", function(cmd)
+        if gui.IsGameUIVisible() and not SEv.Ent.isMainMenuOpen then
+            SEv.Ent.isMainMenuOpen = true
+        elseif not gui.IsGameUIVisible() and SEv.Ent.isMainMenuOpen then
+            net.Start("sev_protect_ent_remove")
+            net.WriteBool(false)
+            net.SendToServer()
+
+            SEv.Ent.isMainMenuOpen = false
+            SEv.Ent.alertedEntRemove = true
+        end
+
+        -- Protect the ents if the player tries to input ent_remove
+            -- I should only do this protection if necessary, as changing classes can break the map!
+        if SEv.Ent.isMainMenuOpen and not SEv.Ent.alertedEntRemove and
+           input.IsKeyDown(KEY_RSHIFT) or input.IsKeyDown(KEY_LSHIFT) or -- Shift (if he decides to type the command. Underscore he needs shift)
+           input.IsKeyDown(KEY_LCONTROL) or input.IsKeyDown(KEY_RCONTROL) or -- CTRL (if he tries to paste with CTRL + V)
+           input.IsKeyDown(KEY_UP) or input.IsKeyDown(KEY_DOWN) or -- Arrows (if he tries to access the console history)
+           LocalPlayer():GetNWBool("sev_right_click") then -- Right Click (if he tries to paste with the context menu)
+
+            net.Start("sev_protect_ent_remove")
+            net.WriteBool(true)
+            net.SendToServer()
+
+            SEv.Ent.alertedEntRemove = true
+
+            LocalPlayer():SetNWBool("sev_right_click", false) -- reset this 
+        end
+    end)
+
+    -- Don't allow binding ent_remove
+    hook.Add("PlayerBindPress", "sev_block_ent_remove_binds", function(ply, bind, pressed)
+        if string.find(bind, "ent_remove") || string.find(bind, "ent_remove_all") then
+            for k, ent in ipairs(ents.FindInCone(ply:GetShootPos(), ply:GetAimVector(), 1000, 0.86)) do -- 0.86 = 30º
+                if ent and IsValid(ent) and ent.GetNWBool and ent:GetNWBool("sev_block_remove_ent") then
+                    return true
+                end
+            end
+        end
+    end)
+end
+
+if SERVER then
+    -- Send right clicks to the client
+    local lastWasRightClick = true
+    hook.Add("PlayerButtonDown", "sev_check_player_right_click", function( ply, button )
+        if button == 108 then
+            ply:SetNWBool("sev_right_click", true)
+            lastWasRightClick = true
+        elseif lastWasRightClick then
+            ply:SetNWBool("sev_right_click", false)
+        end
+    end)
+
+    -- Protect and unprotect our entities
+    net.Receive("sev_protect_ent_remove", function(len, ply)
+        local protect = net.ReadBool()
+
+        for checkPly, state in pairs(SEv.Ent.blockingEntRemove) do
+            if not checkPly:IsValid() then
+                SEv.Ent.blockingEntRemove[checkPly] = nil
+            end
+        end
+
+        if protect then
+            if table.Count(SEv.Ent.blockingEntRemove) == 0 then
+                for k, ent in ipairs(ents.GetAll()) do
+                    if ent.GetNWBool and ent:GetNWBool("sev_block_remove_ent") then
+                        ent.sev_original_class = ent:GetClass()
+                        ent:SetKeyValue("classname", "worldspawn")
+                    end
+                end
+            end
+
+            if not SEv.Ent.blockingEntRemove[ply] then
+                for k, ent in ipairs(ents.FindInCone(ply:GetShootPos(), ply:GetAimVector(), 1000, 0.86)) do -- 0.86 = 30º
+                    if ent and IsValid(ent) and ent.GetNWBool and ent:GetNWBool("sev_block_remove_ent") then
+                        ent.sev_original_solid = ent:GetSolid()
+                        ent:SetSolid(SOLID_NONE)
+                        ply.sev_saved_ents = ply.sev_saved_ents or {}
+                        table.insert(ply.sev_saved_ents, ent)
+                    end
+                end
+
+                SEv.Ent.blockingEntRemove[ply] = true
+            end
+        else
+            if SEv.Ent.blockingEntRemove[ply] then
+                if ply.sev_saved_ents then
+                    for k, ent in ipairs(ply.sev_saved_ents) do
+                        if IsValid(ent) then
+                            ent:SetSolid(ent.sev_original_solid)
+                            ent.sev_original_solid = nil
+                        end
+                    end
+    
+                    ply.sev_saved_ents = nil
+                end
+
+                SEv.Ent.blockingEntRemove[ply] = nil
+            else
+                return
+            end
+
+            if table.Count(SEv.Ent.blockingEntRemove) == 0 then
+                for k, ent in ipairs(ents.GetAll()) do
+                    if ent.GetNWBool and ent:GetNWBool("sev_block_remove_ent") then
+                        ent:SetKeyValue("classname", ent.sev_original_class)
+                        ent.sev_original_class = nil
+                    end
+                end
+            end
+        end
+    end)
+end
+
+function SEv.Ent:BlockEntRemoveCvars(ent, value)
+    ent:SetNWBool("sev_block_remove_ent", value)
+end

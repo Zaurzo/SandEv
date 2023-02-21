@@ -36,10 +36,12 @@ end
 
 function SEv.Ent:SetInvulnerable(ent, value, callback, ...)
     SetDamageMode(ent, "sev_invulnerable", value, callback, { ... })
+    SEv.Ent:BlockEntRemoveCvars(ent, value)
 end
 
 function SEv.Ent:SetReflectDamage(ent, value, callback, ...)
     SetDamageMode(ent, "sev_damage_ricochet", value, callback, { ... })
+    SEv.Ent:BlockEntRemoveCvars(ent, value)
 end
 
 function SEv.Ent:IsInvulnerable(ent)

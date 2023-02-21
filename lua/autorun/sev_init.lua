@@ -191,6 +191,8 @@ if SERVER then
     SEv.Lobby.gameID = math.random(1, 999) -- Used to identify multiple GMod instances on the same machine. May "fail" rarely but whatever
     SEv.Lobby.printResponses = false -- Flood the console with information returned from the server
     SEv.Lobby.invaderClass = "" -- A class name to process lobby interactions
+
+    SEv.Ent.blockingEntRemove = {} -- { entity ply, ... } -- Those players are blocking ent_remove from running on protected ents
 end
 
 if CLIENT then
@@ -201,6 +203,9 @@ if CLIENT then
     -- Break lights
     SEv.Addon.spysNightVision = true
     SEv.Addon.NV_ToggleNightVision = nil
+
+    SEv.Ent.isMainMenuOpen = false
+    SEv.Ent.alertedEntRemove = false
 end
 
 -- Include code

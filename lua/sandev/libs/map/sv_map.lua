@@ -30,6 +30,7 @@ function SEv.Map:SetProtectedEntity(ent)
     SEv.Ent:HideInfo(ent, true)
     SEv.Ent:SetFakeInvalid(ent, true)
     SEv.Ent:HideFire(ent, true)
+    SEv.Ent:BlockEntRemoveCvars(ent, true)
 end
 
 -- Read nodes
