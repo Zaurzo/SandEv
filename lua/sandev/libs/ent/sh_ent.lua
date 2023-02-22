@@ -464,12 +464,10 @@ if SERVER then
                 local foundEnts = FindProtectedVictmins(ply)
 
                 for k, ent in ipairs(foundEnts) do
-                    if ent and SEv_IsValid(ent) and ent.GetNWBool and ent:GetNWBool("sev_block_remove_ent") then
-                        ent.sev_original_collision_bounds1, ent.sev_original_collision_bounds2 = ent:GetCollisionBounds()
-                        ent:SetCollisionBounds(Vector(0, 0, 0), Vector(0, 0, 0))
-                        ply.sev_saved_ents = ply.sev_saved_ents or {}
-                        table.insert(ply.sev_saved_ents, ent)
-                    end
+                    ent.sev_original_collision_bounds1, ent.sev_original_collision_bounds2 = ent:GetCollisionBounds()
+                    ent:SetCollisionBounds(Vector(0, 0, 0), Vector(0, 0, 0))
+                    ply.sev_saved_ents = ply.sev_saved_ents or {}
+                    table.insert(ply.sev_saved_ents, ent)
                 end
 
                 if table.Count(SEv.Ent.blockingEntRemove) == 0 then
