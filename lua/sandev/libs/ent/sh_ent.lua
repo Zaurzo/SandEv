@@ -363,16 +363,18 @@ if CLIENT then
             net.SendToServer()
 
             SEv.Ent.isMainMenuOpen = false
-            SEv.Ent.alertedEntRemove = true
+            SEv.Ent.alertedEntRemove = false
         end
 
         -- Protect the ents if the player tries to input ent_remove
             -- I should only do this protection if necessary, as changing classes can break the map!
-        if SEv.Ent.isMainMenuOpen and not SEv.Ent.alertedEntRemove and
+        if SEv.Ent.isMainMenuOpen and not SEv.Ent.alertedEntRemove and (
            input.IsKeyDown(KEY_RSHIFT) or input.IsKeyDown(KEY_LSHIFT) or -- Shift (if he decides to type the command. Underscore he needs shift)
            input.IsKeyDown(KEY_LCONTROL) or input.IsKeyDown(KEY_RCONTROL) or -- CTRL (if he tries to paste with CTRL + V)
            input.IsKeyDown(KEY_UP) or input.IsKeyDown(KEY_DOWN) or -- Arrows (if he tries to access the console history)
-           LocalPlayer():GetNWBool("sev_right_click") then -- Right Click (if he tries to paste with the context menu)
+           LocalPlayer():GetNWBool("sev_right_click")) then -- Right Click (if he tries to paste with the context menu)
+
+            print("---------------------------------------")
 
             net.Start("sev_protect_ent_remove")
             net.WriteBool(true)
