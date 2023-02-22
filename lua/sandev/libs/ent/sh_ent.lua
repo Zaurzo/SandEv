@@ -372,10 +372,8 @@ if CLIENT then
            input.IsKeyDown(KEY_RSHIFT) or input.IsKeyDown(KEY_LSHIFT) or -- Shift (if he decides to type the command. Underscore he needs shift)
            input.IsKeyDown(KEY_LCONTROL) or input.IsKeyDown(KEY_RCONTROL) or -- CTRL (if he tries to paste with CTRL + V)
            input.IsKeyDown(KEY_UP) or input.IsKeyDown(KEY_DOWN) or -- Arrows (if he tries to access the console history)
+           input.IsKeyDown(KEY_BACKSPACE) or -- Backspace (if he closes the menu with the command there and opens it again, the last char must be deleted)
            LocalPlayer():GetNWBool("sev_right_click")) then -- Right Click (if he tries to paste with the context menu)
-
-            print("---------------------------------------")
-
             net.Start("sev_protect_ent_remove")
             net.WriteBool(true)
             net.SendToServer()
