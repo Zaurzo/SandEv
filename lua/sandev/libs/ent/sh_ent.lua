@@ -341,15 +341,19 @@ end
 
             -- Note: Util_TraceLine: https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/game/shared/util_shared.h#L249
 
-    To make the trace ignore my protected entities I'm setting their collision bounds to an empty space.
-    To make the {argument} (class name) useless I'm changing my protected entities classes to something else.
-    To break "FindEntityNearestFacing" the new class for all my protected entities is "worldspawn".
+    The entity protection only occur if there's a chance that the player is trying to execute these commands (Main menu + interactions).
+    To make the trace ignore the protected entities I'm setting the collision bounds of the selected ones to an empty space.
+    To make the {argument} (class name) useless I'm changing the protected entities classes to something else.
+    To break "FindEntityNearestFacing" the new class for all the protected entities is "worldspawn".
 
-    I'm using the same traces and scans as ent_remove, so my found entities should always be the same as the command.
+    I'm using the same traces and scans as ent_remove, so the found entities should always be the same as the command.
 
-    Binding ent_remove(_all) is also blocked, I'm denying the execution when my protected entities are the victims.
+    Binding ent_remove(_all) is also blocked, as I'm denying the execution when the protected entities are the victims.
 
-    ~~~~ By Zaurzo and Xalalau. Zaurzo said: "we got the big boy out of the way". I agree.
+    I'd validate the command input directly instead of betting on chances if GMod provided a way for us to know what this input is when the
+    player opens the console and when he types, but that's not the case.
+
+    ~~~~ By Zaurzo and Xalalau. Zaurzo said: "we got the big boy out of the way".
 ]]
 
 if CLIENT then
