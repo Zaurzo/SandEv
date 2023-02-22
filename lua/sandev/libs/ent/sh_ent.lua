@@ -348,7 +348,7 @@ end
 
     I'm using the same traces and scans as ent_remove, so the found entities should always be the same as the command. Well, I
     wish that were true... Even though everything looks right, I needed to add a third search to make the result more reliable.
-    take a lookt at FindEntRemoveProtectedVictmins if feel like solving the mystery.
+    take a lookt at FindProtectedVictmins if feel like solving the mystery.
 
     Binding ent_remove(_all) is also blocked, as I'm denying the execution when the protected entities are the victims.
 
@@ -358,7 +358,7 @@ end
     ~~~~ By Zaurzo and Xalalau. Zaurzo said: "we got the big boy out of the way".
 ]]
 
-local function FindEntRemoveProtectedVictmins(ply)
+local function FindProtectedVictmins(ply)
     local foundEnts = {}
 
     local function IsValidVictmin(ent)
@@ -428,7 +428,7 @@ if CLIENT then
     -- Don't allow binding ent_remove
     hook.Add("PlayerBindPress", "sev_block_ent_remove_binds", function(ply, bind, pressed)
         if string.find(bind, "ent_remove") || string.find(bind, "ent_remove_all") then
-            local foundEnts = FindEntRemoveProtectedVictmins(ply)
+            local foundEnts = FindProtectedVictmins(ply)
 
             if #foundEnts > 0 then
                 return true
@@ -461,7 +461,7 @@ if SERVER then
 
         if protect then
             if not SEv.Ent.blockingEntRemove[ply] then
-                local foundEnts = FindEntRemoveProtectedVictmins(ply)
+                local foundEnts = FindProtectedVictmins(ply)
 
                 for k, ent in ipairs(foundEnts) do
                     if ent and SEv_IsValid(ent) and ent.GetNWBool and ent:GetNWBool("sev_block_remove_ent") then
