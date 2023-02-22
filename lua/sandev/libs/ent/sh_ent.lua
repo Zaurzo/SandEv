@@ -277,24 +277,77 @@ function SEv.Ent:CallOnCondition(ent, condition, callback, ...)
     end)
 end
 
+-- Reimplements *CGlobalEntityList::FindEntityNearestFacing
+-- https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/game/server/entitylist.cpp#L1043
+
+function SEv.Ent:FindNearestFacing(origin, facing, threshold)
+    local bestDot = threshold
+    local bestEnt = nil
+
+    for _, ent in ipairs(ents.GetAll()) do
+        if not SEv_IsValid(ent) or ent:IsWorld() or ent:IsPlayer() or ent:IsWeapon() then
+            continue
+        end
+
+        local toEnt = ent:WorldSpaceCenter() - origin
+        toEnt:Normalize()
+
+        local dot = facing:Dot(toEnt)
+
+        if dot <= bestDot then
+            continue
+        end
+
+        bestDot = dot
+        bestEnt = ent
+    end
+
+    return bestEnt
+end
+
+function SEv.Ent:FindAllFacing(origin, facing, threshold)
+    local foundEnts = {}
+
+    for _, ent in ipairs(ents.GetAll()) do
+        if not SEv_IsValid(ent) or ent:IsWorld() or ent:IsPlayer() or ent:IsWeapon() then
+            continue
+        end
+
+        local toEnt = ent:WorldSpaceCenter() - origin
+        toEnt:Normalize()
+
+        local dot = facing:Dot(toEnt)
+
+        if dot <= threshold then
+            continue
+        end
+
+        table.insert(foundEnts, ent)
+    end
+
+    return foundEnts
+end
+
 -- Protect from ent_remove and ent_remove_all commands
 
 --[[
-    This is how ent_remove(_all) works:
+    This is how ent_remove(_all) {argument} works:
 
     -- CC_Ent_Remove https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/game/server/baseentity.cpp#L5041
         -- searchs for class if arg 1 is defined
         -- calls FindPickerEntity() if not https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/game/server/player.cpp#L5776
-            -- it tries to trace a hull to an entity, which looks like gmod's util.TraceHull https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/game/server/player.cpp#L5738
-            -- if it fails them FindEntityNearestFacing is called with 55 degrees (0.96 rad) https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/game/server/entitylist.cpp#L1043
+            -- makes a TraceLine to MAX_COORD_RANGE (16384) in FindEntityForward https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/game/server/player.cpp#L5738
+            -- if it fails them FindEntityNearestFacing is called with 55 degrees view (0.96 rad) https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/game/server/entitylist.cpp#L1043
 
             -- Note: Util_TraceLine: https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/game/shared/util_shared.h#L249
 
-    To make the trace ignore my protected entities I'm using SetSolid.
-    To make the command argument useless I'm changing the entities classes.
-    to make FindEntityNearestFacing break I'm pretending all my entities are the world.
+    To make the trace ignore my protected entities I'm setting their collision bounds to an empty space.
+    To make the {argument} (class name) useless I'm changing my protected entities classes to something else.
+    To break "FindEntityNearestFacing" the new class for all my protected entities is "worldspawn".
 
-    There's a special case where the player binds the command, but here I can work with traces and prevent the the command execution.
+    I'm using the same traces and scans as ent_remove, so my found entities should always be the same as the command.
+
+    Binding ent_remove(_all) is also blocked, I'm denying the execution when my protected entities are the victims.
 
     ~~~~ By Zaurzo and Xalalau. Zaurzo said: "we got the big boy out of the way". I agree.
 ]]
@@ -334,8 +387,17 @@ if CLIENT then
     -- Don't allow binding ent_remove
     hook.Add("PlayerBindPress", "sev_block_ent_remove_binds", function(ply, bind, pressed)
         if string.find(bind, "ent_remove") || string.find(bind, "ent_remove_all") then
-            for k, ent in ipairs(ents.FindInCone(ply:GetShootPos(), ply:GetAimVector(), 1000, 0.86)) do -- 0.86 = 30º
-                if ent and IsValid(ent) and ent.GetNWBool and ent:GetNWBool("sev_block_remove_ent") then
+            -- Find entities using util.TraceLine (MAX_COORD_RANGE = 16384) and FindAllFacing (threshold 0.96)
+            local tr = util.TraceLine({
+                start = ply:EyePos(),
+                endpos = ply:EyePos() + ply:EyeAngles():Forward() * 16384,
+                filter = ply
+            })
+
+            local foundEnts = table.Merge({ tr.Entity }, SEv.Ent:FindAllFacing(ply:EyePos(), ply:EyeAngles():Forward(), 0.96))
+
+            for k, ent in ipairs(foundEnts) do
+                if ent and SEv_IsValid(ent) and ent.GetNWBool and ent:GetNWBool("sev_block_remove_ent") then
                     return true
                 end
             end
@@ -366,22 +428,31 @@ if SERVER then
         end
 
         if protect then
-            if table.Count(SEv.Ent.blockingEntRemove) == 0 then
-                for k, ent in ipairs(ents.GetAll()) do
-                    if ent.GetNWBool and ent:GetNWBool("sev_block_remove_ent") then
-                        ent.sev_original_class = ent:GetClass()
-                        ent:SetKeyValue("classname", "worldspawn")
-                    end
-                end
-            end
-
             if not SEv.Ent.blockingEntRemove[ply] then
-                for k, ent in ipairs(ents.FindInCone(ply:GetShootPos(), ply:GetAimVector(), 1000, 0.86)) do -- 0.86 = 30º
-                    if ent and IsValid(ent) and ent.GetNWBool and ent:GetNWBool("sev_block_remove_ent") then
-                        ent.sev_original_solid = ent:GetSolid()
-                        ent:SetSolid(SOLID_NONE)
+                -- Find entities using util.TraceLine (MAX_COORD_RANGE = 16384) and FindAllFacing (threshold 0.96)
+                local tr = util.TraceLine({
+                    start = ply:EyePos(),
+                    endpos = ply:EyePos() + ply:EyeAngles():Forward() * 16384,
+                    filter = ply
+                })
+
+                local foundEnts = table.Merge({ tr.Entity }, SEv.Ent:FindAllFacing(ply:EyePos(), ply:EyeAngles():Forward(), 0.96))
+
+                for k, ent in ipairs(foundEnts) do
+                    if ent and SEv_IsValid(ent) and ent.GetNWBool and ent:GetNWBool("sev_block_remove_ent") then
+                        ent.sev_original_collision_bounds1, ent.sev_original_collision_bounds2 = ent:GetCollisionBounds()
+                        ent:SetCollisionBounds(Vector(0, 0, 0), Vector(0, 0, 0))
                         ply.sev_saved_ents = ply.sev_saved_ents or {}
                         table.insert(ply.sev_saved_ents, ent)
+                    end
+                end
+
+                if table.Count(SEv.Ent.blockingEntRemove) == 0 then
+                    for k, ent in ipairs(ents.GetAll()) do
+                        if ent.GetNWBool and ent:GetNWBool("sev_block_remove_ent") then
+                            ent.sev_original_class = ent:GetClass()
+                            ent:SetKeyValue("classname", "worldspawn")
+                        end
                     end
                 end
 
@@ -389,17 +460,6 @@ if SERVER then
             end
         else
             if SEv.Ent.blockingEntRemove[ply] then
-                if ply.sev_saved_ents then
-                    for k, ent in ipairs(ply.sev_saved_ents) do
-                        if IsValid(ent) then
-                            ent:SetSolid(ent.sev_original_solid)
-                            ent.sev_original_solid = nil
-                        end
-                    end
-    
-                    ply.sev_saved_ents = nil
-                end
-
                 SEv.Ent.blockingEntRemove[ply] = nil
             else
                 return
@@ -407,11 +467,23 @@ if SERVER then
 
             if table.Count(SEv.Ent.blockingEntRemove) == 0 then
                 for k, ent in ipairs(ents.GetAll()) do
-                    if ent.GetNWBool and ent:GetNWBool("sev_block_remove_ent") then
+                    if ent.sev_original_class then
                         ent:SetKeyValue("classname", ent.sev_original_class)
                         ent.sev_original_class = nil
                     end
                 end
+            end
+
+            if ply.sev_saved_ents then
+                for k, ent in ipairs(ply.sev_saved_ents) do
+                    if SEv_IsValid(ent) then
+                        ent:SetCollisionBounds(ent.sev_original_collision_bounds1, ent.sev_original_collision_bounds2)
+                        ent.sev_original_collision_bounds1 = nil
+                        ent.sev_original_collision_bounds2 = nil
+                    end
+                end
+
+                ply.sev_saved_ents = nil
             end
         end
     end)
