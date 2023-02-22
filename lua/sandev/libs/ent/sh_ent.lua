@@ -346,7 +346,9 @@ end
     To make the {argument} (class name) useless I'm changing the protected entities classes to something else.
     To break "FindEntityNearestFacing" the new class for all the protected entities is "worldspawn".
 
-    I'm using the same traces and scans as ent_remove, so the found entities should always be the same as the command.
+    I'm using the same traces and scans as ent_remove, so the found entities should always be the same as the command. Well, I
+    wish that were true... Even though everything looks right, I needed to add a third search to make the result more reliable.
+    take a lookt at FindEntRemoveProtectedVictmins if feel like solving the mystery.
 
     Binding ent_remove(_all) is also blocked, as I'm denying the execution when the protected entities are the victims.
 
@@ -355,6 +357,41 @@ end
 
     ~~~~ By Zaurzo and Xalalau. Zaurzo said: "we got the big boy out of the way".
 ]]
+
+local function FindEntRemoveProtectedVictmins(ply)
+    local foundEnts = {}
+
+    local function IsValidVictmin(ent)
+        return ent and SEv_IsValid(ent) and ent.GetNWBool and ent:GetNWBool("sev_block_remove_ent")
+    end
+
+    -- Find entities using util.TraceLine (MAX_COORD_RANGE = 16384) and FindAllFacing (threshold 0.96)
+    local tr = util.TraceLine({
+        start = ply:EyePos(),
+        endpos = ply:EyePos() + ply:EyeAngles():Forward() * 16384,
+        filter = ply
+    })
+
+    if IsValidVictmin(tr.Entity) then
+        table.insert(foundEnts, tr.Entity)
+    end
+
+    for k, ent in ipairs(SEv.Ent:FindAllFacing(ply:EyePos(), ply:EyeAngles():Forward(), 0.96)) do
+        if IsValidVictmin(ent) and ent ~= tr.Entity then
+            table.insert(foundEnts, ent)
+        end
+    end
+
+    -- Extra scan to improve results. Delete it if you figure out why the searchs above are different from the ent_remove command.
+    -- Finds near ents
+    for k, ent in ipairs(ents.FindInCone(ply:GetShootPos(), ply:GetAimVector(), 1500, 0.86)) do -- 0.86 = 30º
+        if IsValidVictmin(ent) and not table.HasValue(foundEnts, ent) then
+            table.insert(foundEnts, ent)
+        end
+    end
+
+    return foundEnts
+end
 
 if CLIENT then
     -- CreateMove works even in singleplayer with the game paused
@@ -391,19 +428,10 @@ if CLIENT then
     -- Don't allow binding ent_remove
     hook.Add("PlayerBindPress", "sev_block_ent_remove_binds", function(ply, bind, pressed)
         if string.find(bind, "ent_remove") || string.find(bind, "ent_remove_all") then
-            -- Find entities using util.TraceLine (MAX_COORD_RANGE = 16384) and FindAllFacing (threshold 0.96)
-            local tr = util.TraceLine({
-                start = ply:EyePos(),
-                endpos = ply:EyePos() + ply:EyeAngles():Forward() * 16384,
-                filter = ply
-            })
+            local foundEnts = FindEntRemoveProtectedVictmins(ply)
 
-            local foundEnts = table.Merge({ tr.Entity }, SEv.Ent:FindAllFacing(ply:EyePos(), ply:EyeAngles():Forward(), 0.96))
-
-            for k, ent in ipairs(foundEnts) do
-                if ent and SEv_IsValid(ent) and ent.GetNWBool and ent:GetNWBool("sev_block_remove_ent") then
-                    return true
-                end
+            if #foundEnts > 0 then
+                return true
             end
         end
     end)
@@ -433,14 +461,7 @@ if SERVER then
 
         if protect then
             if not SEv.Ent.blockingEntRemove[ply] then
-                -- Find entities using util.TraceLine (MAX_COORD_RANGE = 16384) and FindAllFacing (threshold 0.96)
-                local tr = util.TraceLine({
-                    start = ply:EyePos(),
-                    endpos = ply:EyePos() + ply:EyeAngles():Forward() * 16384,
-                    filter = ply
-                })
-
-                local foundEnts = table.Merge({ tr.Entity }, SEv.Ent:FindAllFacing(ply:EyePos(), ply:EyeAngles():Forward(), 0.96))
+                local foundEnts = FindEntRemoveProtectedVictmins(ply)
 
                 for k, ent in ipairs(foundEnts) do
                     if ent and SEv_IsValid(ent) and ent.GetNWBool and ent:GetNWBool("sev_block_remove_ent") then
