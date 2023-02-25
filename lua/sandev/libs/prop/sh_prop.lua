@@ -14,6 +14,7 @@ function SEv.Prop:RemoveOnBreakCallback(ent, id)
 end
 
 function SEv.Prop:GetOnBreakCallbacks(ent)
+    if not IsValid(ent) then return end
     return ent.sev_on_break_callback
 end
 
