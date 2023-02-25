@@ -5,7 +5,8 @@ function SEv:AddDevModeToInstance(instance)
         instance.devMode = true
 
         local function ConvertCVarDataToMemory(any)
-            if isnumber(any) then
+            if any == nil then
+            elseif isnumber(any) then
                 any = tonumber(any)
             elseif any == ("true" or "false") then
                 any = tobool(any)
