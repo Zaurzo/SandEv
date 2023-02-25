@@ -23,7 +23,7 @@ function SEv:AddDevModeToInstance(instance)
         concommand.Add(instance.id .. "_memories_toggle_per_player", function(ply, cmd, args) instance.Event.Memory:TogglePerPlayer(ply, cmd, args) end)
         concommand.Add(instance.id .. "_memories_list", function() instance.Event.Memory:List() end)
         concommand.Add(instance.id .. "_memories_print_logic", function() instance.Event.Memory.Dependency:PrintLogic() end)
-        concommand.Add(instance.id .. "_memories_set", function(ply, cmd, args) instance.Event.Memory:Set(args[1], ConvertCVarDataToMemory(args[2])) end)
+        concommand.Add(instance.id .. "_memories_set", function(ply, cmd, args) instance.Event.Memory:Set(args[1], ConvertCVarDataToMemory(args[2])) print("Done") end)
 
         if CLIENT then
             net.Start(instance.id .. "_event_request_all_render_sv")
