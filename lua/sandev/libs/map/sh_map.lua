@@ -13,38 +13,37 @@ function SEv.Map:BlockCleanup(value)
 end
 
 function SEv.Map:BlockEntCleanup(ent, value)
-    self.CleanupEntFilter[ent] = value
+    self.CleanupEntFilter[ent] = value or nil
 end
 
-function game.CleanUpMap(dontSendToClients, extraFilters)
+function game.CleanUpMap(dontSendToClients, extraFilters, ...)
     if SEv.Map:IsCleanupBlocked() then return end
-
-    local processedClasses = {}
-    for ent, isBlocked in pairs(SEv.Map.CleanupEntFilter) do
-        if ent:IsValid() then
-            local class = ent:GetClass()
-
-            if not processedClasses[class] then
-                processedClasses[class] = true
-
-                for k, ent in ipairs(ents.FindByClass(class)) do
-                    if not SEv.Map.CleanupEntFilter[ent] then
-                        ent:Remove()
-                    end
-                end
-            end
-        else
-            SEv.Map.CleanupEntFilter[ent] = nil
-        end
-    end
 
     if not istable(extraFilters) then
         extraFilters = {}
     end
 
-    for class in pairs(processedClasses) do
-        table.insert(extraFilters, class)
+    local protectedEntities = {}
+
+    for ent, isBlocked in pairs(SEv.Map.CleanupEntFilter) do
+        if ent:IsValid() then
+            local classname = ent:GetClass()
+            local newClassName = 'sev_cleanup_protection_' .. tostring(ent)
+
+            ent:SetKeyValue('classname', newClassName)
+            
+            extraFilters[#extraFilters + 1] = newClassName
+            protectedEntities[ent] = classname
+        else
+            SEv.Map.CleanupEntFilter[ent] = nil
+        end
     end
 
-    SEv_gameCleanUpMap(dontSendToClients, extraFilters)
+    SEv_gameCleanUpMap(dontSendToClients, extraFilters, ...)
+
+    for ent, classname in pairs(protectedEntities) do
+        if ent:IsValid() then
+            ent:SetKeyValue('classname', classname)
+        end
+    end
 end
