@@ -1,7 +1,9 @@
 -- Store that the entity is an npc (helps with duplication later)
 
 hook.Add("PlayerSpawnedNPC", "sev_set_is_npc", function(ply, npc)
-    npc.sev_is_npc = true
+    if IsValid(npc) then
+        npc.sev_is_npc = true
+    end
 end)
 
 -- Attack the closest player
