@@ -30,6 +30,8 @@ function SEv.Ent:BlockPhysgun(ent, value, ply)
 end
 
 function SEv.Ent:IsPhysgunBlocked(ent, ply)
+    if not IsValid(ent) then return end
+
     if ply and ply:IsPlayer() then
         return ply.sev_physgyun and ply.sev_physgyun[ent]
     else
