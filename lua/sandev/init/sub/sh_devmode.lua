@@ -26,7 +26,7 @@ function SEv:AddDevModeToInstance(instance)
         concommand.Add(instance.id .. "_memories_set", function(ply, cmd, args) instance.Event.Memory:Set(args[1], ConvertCVarDataToMemory(args[2])) print("Done") end)
 
         if CLIENT then
-            net.Start(instance.id .. "_event_request_all_render_sv")
+            SEv.Net:Start(instance.id .. "_event_request_all_render_sv")
             net.SendToServer()
 
             CreateClientConVar(instance.id .. "_events_show_names", "0", true, false)
@@ -76,7 +76,7 @@ function SEv:AddDevModeToInstance(instance)
 
             instance[toggleFuncName]()
 
-            net.Start(instance.id .. "_toggle_devmode")
+            SEv.Net:Start(instance.id .. "_toggle_devmode")
             net.WriteString(toggleFuncName)
             net.Broadcast()
 
@@ -95,7 +95,7 @@ function SEv:AddDevModeToInstance(instance)
             end
         end)
 
-        net.Receive(instance.id .. "_toggle_devmode", function()
+        SEv.Net:Receive(instance.id .. "_toggle_devmode", function()
             local toggleFuncName = net.ReadString()
             instance[toggleFuncName]()
         end)
@@ -132,7 +132,7 @@ if SERVER then
 
         SEv[toggleFuncName]()
 
-        net.Start(SEv.id .. "_toggle_devmode")
+        SEv.Net:Start(SEv.id .. "_toggle_devmode")
         net.WriteString(toggleFuncName)
         net.Broadcast()
 
@@ -151,7 +151,7 @@ else
         end
     end)
 
-    net.Receive(SEv.id .. "_toggle_devmode", function()
+    SEv.Net:Receive(SEv.id .. "_toggle_devmode", function()
         local toggleFuncName = net.ReadString()
         SEv[toggleFuncName]()
     end)

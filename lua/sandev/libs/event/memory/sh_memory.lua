@@ -16,7 +16,7 @@ function SEv.Event.Memory:Reset()
     self.Dependency.dependents = {}
 
     if SERVER then
-        net.Start(self.instance.id .. "_clear_memories")
+        SEv.Net:Start(self.instance.id .. "_clear_memories")
         net.Broadcast()
     end
 end
@@ -33,7 +33,7 @@ function SEv.Event.Memory:Set(memoryName, value, doNotRefreshEvents, isFromServe
     if SERVER then
         self:Save()
 
-        net.Start(self.instance.id .. "_broadcast_memory")
+        SEv.Net:Start(self.instance.id .. "_broadcast_memory")
         net.WriteString(memoryName)
         net.WriteBool(doNotRefreshEvents)
         net.WriteString(util.TableToJSON({ value }))
@@ -115,7 +115,7 @@ end
 --   It can be used to store data both on the server and client and is capable of triggering events on the client.
 function SEv.Event.Memory:SetPerPlayer(ply, memoryName, value, doNotRefreshEvents)
     if CLIENT then
-        net.Start(self.instance.id .. "_set_per_player_memory_sv")
+        SEv.Net:Start(self.instance.id .. "_set_per_player_memory_sv")
         net.WriteString(memoryName)
         net.WriteString(util.TableToJSON({ value }))
         net.WriteBool(doNotRefreshEvents)
@@ -128,7 +128,7 @@ function SEv.Event.Memory:SetPerPlayer(ply, memoryName, value, doNotRefreshEvent
 
     self.list[perPlayerMemoryName] = value
 
-    net.Start(self.instance.id .. "_set_per_player_memory_cl")
+    SEv.Net:Start(self.instance.id .. "_set_per_player_memory_cl")
     net.WriteString(memoryName)
     net.WriteString(util.TableToJSON({ value }))
     net.WriteBool(doNotRefreshEvents)
@@ -144,11 +144,11 @@ end
 -- Instance init
 function SEv.Event.Memory:InitSh(instance)
     if CLIENT then
-        net.Receive(instance.id .. "_clear_memories", function()
+        SEv.Net:Receive(instance.id .. "_clear_memories", function()
             instance.Event.Memory:Reset()
         end)
 
-        net.Receive(instance.id .. "_set_per_player_memory_cl", function()
+        SEv.Net:Receive(instance.id .. "_set_per_player_memory_cl", function()
             local memoryName = net.ReadString()
             local value = unpack(util.JSONToTable(net.ReadString()))
             local doNotRefreshEvents = net.ReadBool()
@@ -162,7 +162,7 @@ function SEv.Event.Memory:InitSh(instance)
     end
 
     if SERVER then
-        net.Receive(instance.id .. "_set_per_player_memory_sv", function(_, ply)
+        SEv.Net:Receive(instance.id .. "_set_per_player_memory_sv", function(_, ply)
             local memoryName = net.ReadString()
             local value = unpack(util.JSONToTable(net.ReadString()) or {})
             local doNotRefreshEvents = net.ReadBool()

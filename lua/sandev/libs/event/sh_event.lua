@@ -71,7 +71,7 @@ function SEv.Event:SetRenderInfoEntity(ent)
         if SERVER then
             if blockSendFirstEntities then return end
 
-            net.Start(self.instance.id .. "_event_set_render_cl")
+            SEv.Net:Start(self.instance.id .. "_event_set_render_cl")
                 net.WriteTable(entRenderInfo)
             net.Broadcast()
         else
@@ -107,7 +107,7 @@ function SEv.Event:RemoveRenderInfoEntity(ent)
 
         local entID = entRenderInfo.entID
 
-        net.Start(self.instance.id .. "_event_remove_render_cl")
+        SEv.Net:Start(self.instance.id .. "_event_remove_render_cl")
             net.WriteString(eventName)
             net.WriteString(entID)
         net.Broadcast()
@@ -148,7 +148,7 @@ function SEv.Event:RemoveAll()
     self.list = {}
 
     if SERVER then
-        net.Start(self.instance.id .. "_event_remove_all_cl")
+        SEv.Net:Start(self.instance.id .. "_event_remove_all_cl")
         net.Broadcast()
     end
 end
@@ -192,7 +192,7 @@ function SEv.Event:Remove(eventNameOut)
     hook.Run(self.instance.id .. "_remove_" .. eventNameOut)
 
     if SERVER and hasEntities then
-        net.Start(self.instance.id .. "_event_remove_cl")
+        SEv.Net:Start(self.instance.id .. "_event_remove_cl")
             net.WriteString(eventNameOut)
         net.Broadcast()
     end
@@ -309,7 +309,7 @@ function SEv.Event:InitializeTier()
     end
 
     if SERVER then
-        net.Start(self.instance.id .. "_event_initialize_tier_cl")
+        SEv.Net:Start(self.instance.id .. "_event_initialize_tier_cl")
         net.Broadcast()
     end
 end
@@ -333,7 +333,7 @@ function SEv.Event:ReloadCurrent()
     end
 
     if SERVER and self.instance.devMode then
-        net.Start(self.instance.id .. "_event_remove_all_ents_cl")
+        SEv.Net:Start(self.instance.id .. "_event_remove_all_ents_cl")
         net.Broadcast()
 
         timer.Simple(1, function()

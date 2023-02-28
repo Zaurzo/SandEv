@@ -59,7 +59,7 @@ end
 if SERVER then
     -- util.AddNetworkString("SEv_PORTALS_FREEZE") -- Moved to the net init file
 else
-    net.Receive("SEv_PORTALS_FREEZE", function()
+    SEv.Net:Receive("SEv_PORTALS_FREEZE", function()
         if game.SinglePlayer() then 
             updateCalcViews(Vector(), Vector())
 
@@ -230,7 +230,7 @@ hook.Add("Move", "sev_portal_teleport", function(ply, mv)
                 end
 
                 mv:SetOrigin(finalPos)
-                net.Start("SEv_PORTALS_FREEZE")
+                SEv.Net:Start("SEv_PORTALS_FREEZE")
                 net.WriteBool(hitPortal == exitPortal)
                 net.Send(ply)
             else

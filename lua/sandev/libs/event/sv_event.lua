@@ -35,7 +35,7 @@ function SEv.Event:SendCustomEnts(ply)
 
             local isLastChunk = i == totalChunks
 
-            net.Start(self.instance.id .. "_event_send_all_render_cl")
+            SEv.Net:Start(self.instance.id .. "_event_send_all_render_cl")
             net.WriteString(currentChunksID)
             net.WriteUInt(#chunk, 16)
             net.WriteData(chunk, #chunk)
@@ -120,7 +120,7 @@ end
 -- Instance init
 function SEv.Event:InitSv(instance)
     -- New players, devMode: ask for entities information to enable rendering their areas
-    net.Receive(instance.id .. "_event_request_all_render_sv", function(len, ply)
+    SEv.Net:Receive(instance.id .. "_event_request_all_render_sv", function(len, ply)
         instance.Event:SendCustomEnts(ply)
     end)
 
