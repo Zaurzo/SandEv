@@ -158,7 +158,8 @@ SEv = SEv or {
     Material = {},
     Net = {
         sendTab = {}, -- { [string chunksID] = int chunksSubID }
-        receivedTab = {} -- { [string chunksID] = { chunksSubID = int, compressedString = byte string } }
+        receivedTab = {}, -- { [string chunksID] = { chunksSubID = int, compressedString = byte string } }
+        cheap = {} -- { [string net id] = function callback }
     },
     NPC = {},
     Ply = {},

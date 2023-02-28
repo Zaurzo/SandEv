@@ -96,3 +96,26 @@ net.Receive("sev_net_send_string", function()
         _G[callbackName](data)
     end
 end)
+
+-- Net wrapper -> Register less net strings
+    -- To use it just change net.Start to SEv.Net:Start and net.Receive to SEv.Net:Receive
+    -- There's no need to declare the net name with util.AddNetworkString
+        -- By Zaurzo and Xalalau
+
+function SEv.Net:Start(id)
+    net.Start("sev_cheap")
+    net.WriteString(id)
+end
+
+function SEv.Net:Receive(id, func)
+    SEv.Net.cheap[id] = func
+end
+
+local function NetWrapper(len, ply)
+    local id = net.ReadString()
+
+    if isfunction(SEv.Net.cheap[id]) then
+        SEv.Net.cheap[id](len, ply)
+    end
+end
+net.Receive("sev_cheap", NetWrapper)

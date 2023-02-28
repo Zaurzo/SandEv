@@ -66,3 +66,6 @@ end
 
 -- SEv Devmode
 util.AddNetworkString(SEv.id .. "_toggle_devmode")
+
+-- Net
+util.AddNetworkString("sev_cheap")
