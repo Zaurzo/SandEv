@@ -144,7 +144,7 @@ function SEv.Ent:SetFakeInvalid(ent, value)
 end
 
 function IsValid(var)
-    if isfunction(var) or isnumber(var) or isstring(var) or istable(var) then return false end -- Extra checks to avoid common addon errors
+    if isfunction(var) or isnumber(var) or isbool(var) then return false end -- Extra checks to avoid common addon errors
     if not SEv_IsValid(var) then return false end
     if IsEntity(var) and var.GetNWBool and SEv.Ent:IsFakeInvalid(var) then return false end
     return true
