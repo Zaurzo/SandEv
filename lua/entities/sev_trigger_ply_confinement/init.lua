@@ -37,8 +37,6 @@ function ENT:Setup(instance, eventName, entName, vecA, vecB, keyName)
     self:SetCollisionBoundsWS(vecA, vecB)
     self:SetTrigger(true)
 
-    SEv.Ent:SetCursed(self, true)
-
     instance.Event:SetRenderInfoEntity(self)
 end
 

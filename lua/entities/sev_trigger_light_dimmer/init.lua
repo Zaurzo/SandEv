@@ -49,8 +49,6 @@ function ENT:Setup(instance, eventName, entName, vecA, vecB)
     self:SearchForExternalLights()
     self:SearchInside()
 
-    SEv.Ent:SetCursed(self, true)
-
     instance.Event:SetRenderInfoEntity(self)
 end
 
@@ -112,8 +110,8 @@ end
 -- Note: Burn-Resistant Lights will turn off, dim and even release sparks, but can still be turned on.
 function ENT:BurnLight(ent, spotlight)
     if SEv.Addon:BurnSimfphysLights(ent) then return end
-    if SEv.Addon:CurseVJFirePlace(ent) then return end
-    if SEv.Addon:CurseVJFlareRound(ent) then return end
+    if SEv.Addon:ControlVJFirePlace(ent) then return end
+    if SEv.Addon:ControlVJFlareRound(ent) then return end
 
     ent.sev_tryed_to_burn = true
     if spotlight then

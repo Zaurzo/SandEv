@@ -45,8 +45,6 @@ function ENT:Setup(instance, eventName, entName, vecA, vecB, protectConstruction
     self:SetCollisionBoundsWS(vecA, vecB)
     self:SetTrigger(true)
 
-    SEv.Ent:SetCursed(self, true)
-
     local persistentFolder = instance.dataFolder .. "/persistent"
     file.CreateDir(persistentFolder)
 

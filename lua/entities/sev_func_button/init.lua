@@ -42,8 +42,6 @@ function ENT:Setup(instance, eventName, entName, vecA, vecB, hasPhysics, useType
     self:SetVar("callback", callback)
     self:SetVar("args", { ... })
 
-    SEv.Ent:SetCursed(self, true)
-
     instance.Event:SetRenderInfoEntity(self)
 end
 

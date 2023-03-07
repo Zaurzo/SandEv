@@ -65,8 +65,6 @@ function SEv.Custom:CreateProximityTrigger(instance, eventName, ent, relTriggerP
 
     SetVeryNearTriggerPos(proximityTrigger)
     proximityTrigger:SetParent(ent)
-    
-    SEv.Ent:HideCurse(proximityTrigger, true)
 
     if isfunction(callbackStartTouch) then
         proximityTrigger["StartTouch"] = function (self, ent)
@@ -462,8 +460,6 @@ function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, 
         local maxAreaTrigger = ents.Create("sev_trigger")
         maxAreaTrigger:Setup(instance, eventName, eventName .. "MaxAreaTrigger" .. k  .. "_" .. extraId, maxAreaTriggerInfo.vecA, maxAreaTriggerInfo.vecB)
         table.insert(createdEnts, maxAreaTrigger)
-
-        SEv.Ent:HideCurse(maxAreaTrigger, true)
 
         function maxAreaTrigger:StartTouch(ent)
             if ent:IsPlayer() then

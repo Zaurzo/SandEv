@@ -150,24 +150,6 @@ function IsValid(var)
     return true
 end
 
--- Curse (events use this information in a variety of ways)
-
-function SEv.Ent:SetCursed(ent, value)
-    ent.sev_cursed = value
-end
-
-function SEv.Ent:IsCursed(ent)
-    return ent.sev_cursed
-end
-
-function SEv.Ent:HideCurse(ent, value)
-    ent.sev_hide_curse = value
-end
-
-function SEv.Ent:IsCurseHidden(ent)
-    return ent.sev_hide_curse
-end
-
 -- Sounds
 
 function SEv.Ent:SetMute(ent, value)

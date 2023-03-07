@@ -1,11 +1,11 @@
 -- Prevent the player from lighting vc fireplace (CLIENT)
 -- https://steamcommunity.com/workshop/filedetails/?id=131759821
 
-SEv.Net:Receive("sev_curse_vc_fireplace", function()
-    SEv.Addon:CurseVJFirePlace(net.ReadEntity())
+SEv.Net:Receive("sev_control_vc_fireplace", function()
+    SEv.Addon:ControlVJFirePlace(net.ReadEntity())
 end)
 
-function SEv.Addon:CurseVJFirePlace(ent)
+function SEv.Addon:ControlVJFirePlace(ent)
     if not IsValid(ent) then return end
 
     ent:SetNW2Bool("VJ_FirePlace_Activated", false)

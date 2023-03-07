@@ -40,10 +40,10 @@ end)
 
 -- Prevent the player from lighting vc fireplace (SERVER)
 -- https://steamcommunity.com/workshop/filedetails/?id=131759821
-function SEv.Addon:CurseVJFirePlace(ent)
+function SEv.Addon:ControlVJFirePlace(ent)
     if ent:GetClass() ~= "sent_vj_fireplace" then return false end
 
-    SEv.Net:Start("sev_curse_vc_fireplace")
+    SEv.Net:Start("sev_control_vc_fireplace")
     net.WriteEntity(ent)
     net.Broadcast()
 
@@ -52,7 +52,7 @@ end
 
 -- Prevent the player from lighting vj flarerounds
 -- https://steamcommunity.com/workshop/filedetails/?id=131759821
-function SEv.Addon:CurseVJFlareRound(ent)
+function SEv.Addon:ControlVJFlareRound(ent)
     if ent:GetClass() ~= "obj_vj_flareround" then return false end
 
     ent.Dead = true

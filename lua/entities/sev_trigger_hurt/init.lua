@@ -33,8 +33,6 @@ function ENT:Setup(instance, eventName, entName, vecA, vecB, filterIn, dmg, dmgT
     self:SetVar("dmg", dmg)
     self:SetVar("delay", delay)
 
-    SEv.Ent:SetCursed(self, true)
-
     instance.Event:SetRenderInfoEntity(self)
 end
 

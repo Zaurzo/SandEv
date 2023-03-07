@@ -23,8 +23,6 @@ function ENT:Setup(instance, eventName, entName, vecA, vecB, keyName)
     self:SetCollisionBoundsWS(vecA, vecB)
     self:SetTrigger(true)
 
-    SEv.Ent:SetCursed(self, true)
-
     self.isEnabled = false
     self.ents = {}
 
