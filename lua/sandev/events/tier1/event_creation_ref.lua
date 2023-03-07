@@ -57,7 +57,7 @@ local function CreateEvent()
     -- Create entities and connect them to the event so that they are automatically cleared if the it ends
     local citizen = ents.Create("npc_citizen")
     citizen:Spawn()
-    INSTANCE.Event:SetGameEntity(eventName, citizen)
+    INSTANCE.Event:RegisterEntity(eventName, citizen)
 
     -- Use SandEv libs to set custom behaviours, such as
     SEv.Ent:BlockPhysgun(ent, value)

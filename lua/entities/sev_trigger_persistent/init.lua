@@ -309,7 +309,7 @@ function ENT:StartTouch(ent)
         self.playersIn[ent] = true
     end
 
-    self.instance.Event:SetGameEntity(self:GetVar("eventName"), ent)
+    self.instance.Event:RegisterEntity(self:GetVar("eventName"), ent)
 
     if not SEv.Ent:IsSpawnedByPlayer(ent) or ent:IsNextBot() then return end
     if ent.sev_duplicated or ent.sev_constraint then return end
@@ -349,7 +349,7 @@ function ENT:EndTouch(ent)
     if self:GetVar("isReadOnly") then return end
 
     self:UnsaveEnt(ent)
-    self.instance.Event:RemoveGameEntity(self:GetVar("eventName"), ent)
+    self.instance.Event:UnregisterEntity(self:GetVar("eventName"), ent)
 end
 
 -- If for some reason entities spawn repeated (perfectly overlaping), use this to remove the extra ones

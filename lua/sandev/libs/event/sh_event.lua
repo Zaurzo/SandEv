@@ -37,13 +37,13 @@ function SEv.Event:IsGameEntity(ent)
 end
 
 -- Set any event entity
-function SEv.Event:SetGameEntity(eventName, ent)
+function SEv.Event:RegisterEntity(eventName, ent)
     self.gameEntityList[eventName] = self.gameEntityList[eventName] or {}
     self.gameEntityList[eventName][ent] = true
 end
 
 -- Remove any event entity
-function SEv.Event:RemoveGameEntity(eventName, ent)
+function SEv.Event:UnregisterEntity(eventName, ent)
     if self.gameEntityList[eventName] then
         self.gameEntityList[eventName][ent] = nil
     end

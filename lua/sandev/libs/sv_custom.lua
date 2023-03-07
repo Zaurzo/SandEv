@@ -388,7 +388,7 @@ function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, 
                         end
                     end)
                     SEv.Ent:BlockPhysgun(portal1, true)
-                    instance.Event:SetGameEntity(eventName, portal1)
+                    instance.Event:RegisterEntity(eventName, portal1)
                     table.insert(portals, portal1)
 
                     if isbool(portalPair[1].disablePropTeleport) then
@@ -427,7 +427,7 @@ function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, 
                         end)
                         SEv.Ent:BlockPhysgun(portal2, true)
                         SEv.Ent:HideInfo(portal2, true)
-                        instance.Event:SetGameEntity(eventName, portal2)
+                        instance.Event:RegisterEntity(eventName, portal2)
                         table.insert(portals, portal2)
 
                         if isbool(portalPair[2].disablePropTeleport) then
