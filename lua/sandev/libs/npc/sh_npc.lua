@@ -56,3 +56,14 @@ function SEv.NPC:PlaySequences(npc, ...)
 
     return delay
 end
+
+-- Restore removed functions
+--   Some addons seem to remove default NPC functions which I need.
+
+function SEv.NPC:RestoreDefaultFunc(ent, funcName)
+    local npc = FindMetaTable("NPC")
+
+    if npc[funcName] then
+        ent[funcName] = npc[funcName]
+    end    
+end
