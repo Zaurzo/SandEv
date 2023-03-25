@@ -60,7 +60,9 @@ end
 -- Restore removed functions
 --   Some addons seem to remove default NPC functions which I need.
 
-function SEv.NPC:RestoreDefaultFunc(ent, funcName)
+function SEv.NPC:RestoreMissingFunc(ent, funcName)
+    if ent[funcName] then return end
+
     local npc = FindMetaTable("NPC")
 
     if npc[funcName] then
