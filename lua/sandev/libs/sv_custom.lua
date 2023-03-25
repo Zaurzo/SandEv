@@ -47,13 +47,13 @@ function SEv.Custom:CreatePath(instance, pathVecs, eventName, postionTouchCallba
 end
 
 -- Proximity trigger
-function SEv.Custom:CreateProximityTrigger(instance, eventName, ent, relTriggerPos, height, size, callbackStartTouch, callbackTouch, callbackEndTouch)
+function SEv.Custom:CreateProximityTrigger(instance, eventName, baseEnt, relTriggerPos, height, size, callbackStartTouch, callbackTouch, callbackEndTouch)
     if not isfunction(callbackStartTouch) and not isfunction(callbackTouch) and not isfunction(callbackEndTouch) then return end
     relTriggerPos = relTriggerPos or Vector(0, 0, 0)
 
-    local absTriggerPos = ent:GetPos() + relTriggerPos
-    if not ent.proximityTrigger then
-        ent.proximityTrigger = {}
+    local absTriggerPos = baseEnt:GetPos() + relTriggerPos
+    if not baseEnt.proximityTrigger then
+        baseEnt.proximityTrigger = {}
     end
 
     local proximityTrigger = ents.Create("sev_trigger")
@@ -64,37 +64,43 @@ function SEv.Custom:CreateProximityTrigger(instance, eventName, ent, relTriggerP
     end
 
     SetVeryNearTriggerPos(proximityTrigger)
-    proximityTrigger:SetParent(ent)
+    proximityTrigger:SetParent(baseEnt)
 
     if isfunction(callbackStartTouch) then
-        proximityTrigger["StartTouch"] = function (self, ent)
-            callbackStartTouch(self, ent)
+        proximityTrigger["StartTouch"] = function (self, touchingEnt)
+            if baseEnt:IsValid() then
+                callbackStartTouch(self, touchingEnt)
+            end
         end
     end
 
     if isfunction(callbackTouch) then
-        proximityTrigger["Touch"] = function (self, ent)
-            callbackTouch(self, ent)
+        proximityTrigger["Touch"] = function (self, touchingEnt)
+            if baseEnt:IsValid() then
+                callbackTouch(self, touchingEnt)
+            end
         end
     end
 
     if isfunction(callbackEndTouch) then
-        proximityTrigger["EndTouch"] = function (self, ent)
-            callbackEndTouch(self, ent)
+        proximityTrigger["EndTouch"] = function (self, touchingEnt)
+            if baseEnt:IsValid() then
+                callbackEndTouch(self, touchingEnt)
+            end
         end
     end
 
-    local lastPos = ent:GetPos()
+    local lastPos = baseEnt:GetPos()
     timer.Create(proximityTriggerId, 0.2, 0, function()
-        if not ent:IsValid() or not proximityTrigger:IsValid() then
+        if not baseEnt:IsValid() or not proximityTrigger:IsValid() then
             timer.Remove(proximityTriggerId)
             return
         end
 
-        local pos = ent:GetPos()
+        local pos = baseEnt:GetPos()
         if lastPos ~= pos then
             lastPos = pos
-            absTriggerPos = ent:GetPos() + relTriggerPos
+            absTriggerPos = baseEnt:GetPos() + relTriggerPos
             SetVeryNearTriggerPos(proximityTrigger)
         end
     end)
@@ -103,7 +109,7 @@ function SEv.Custom:CreateProximityTrigger(instance, eventName, ent, relTriggerP
         instance.Event:RemoveRenderInfoEntity(proximityTrigger)
     end)
 
-    table.insert(ent.proximityTrigger, proximityTrigger)
+    table.insert(baseEnt.proximityTrigger, proximityTrigger)
 end
 
 --[[
