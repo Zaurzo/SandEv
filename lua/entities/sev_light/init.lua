@@ -46,6 +46,33 @@ function ENT:SetBrightness(brightness)
     self:SetNWInt("brightness", brightness)
 end
 
+function ENT:GetSize()
+    return self:GetNWInt("size")
+end
+
+function ENT:SetSize(size)
+    self:SetNWInt("size", size)
+end
+
+function ENT:GetDecay()
+    return self:GetNWInt("decay")
+end
+
+function ENT:SetDecay(decay)
+    self:SetNWInt("decay", decay)
+end
+
+function ENT:GetColor()
+    return Color(self:GetNWInt("r"), self:GetNWInt("g"), self:GetNWInt("b"), self:GetNWInt("brightness"))
+end
+
+function ENT:SetColor(color)
+    self:SetNWInt("r", color.r)
+    self:SetNWInt("g", color.g)
+    self:SetNWInt("b", color.b)
+    self:SetNWInt("brightness", color.brightness)
+end
+
 function ENT:Toggle()
     self:SetNWBool("state", not self:GetNWBool("state"))
 end
