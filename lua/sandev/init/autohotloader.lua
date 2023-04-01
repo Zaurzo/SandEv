@@ -444,8 +444,8 @@ function SHL:InitSEv()
 
     -- Remove temporary detours
     timer.Simple(1, function()
-        AddCSLuaFile = AddCSLuaFileOriginal
-        include = includeOriginal
+        AddCSLuaFile = AddCSLuaFileInUse
+        include = includeInUse
     end)
 end
 
@@ -493,7 +493,8 @@ function SHL:HotloadSEv(gmaTitle)
     -- Add temporary detours
 
     -- AddCSLuaFile: helps to debug
-    AddCSLuaFileOriginal = AddCSLuaFileOriginal or WSHL_AddCSLuaFile or AddCSLuaFile
+    local AddCSLuaFileOriginal = AddCSLuaFileOriginal or WSHL_AddCSLuaFile or AddCSLuaFile
+    AddCSLuaFileInUse = AddCSLuaFileInUse or AddCSLuaFile
     function AddCSLuaFile(path)
         if CLIENT then return end
 
@@ -513,7 +514,8 @@ function SHL:HotloadSEv(gmaTitle)
     end
 
     -- Include: helps to debug and workarounds the CLIENT include datapack issue
-    includeOriginal = includeOriginal or WSHL_include or include
+    local includeOriginal = includeOriginal or WSHL_include or include
+    includeInUse = includeInUse or include
     function include(path)
         if not file.Exists(path, "LUA") or not string.find(path, "([\\/]+)") then
             local fixedPath = string.GetPathFromFilename(debug.getinfo(2).source) .. path
