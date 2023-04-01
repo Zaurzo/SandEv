@@ -311,6 +311,7 @@ function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, 
     local portals = {}
     local plysInMaxArea = {} -- States: nil: outside, true: inside, false: exiting
     local arePortalsEnabled = false
+    local canClosePortals = false
     local createdEnts = {}
     local extraId = #ents.FindByClass("sev_portal")
 
@@ -324,7 +325,9 @@ function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, 
     end
 
     local function closePortals(ent)
-        arePortalsEnabled = false
+        if not canClosePortals then return end
+
+        canClosePortals = false
 
         for k, portal in ipairs(portals) do
             if portal:IsValid() then
@@ -368,6 +371,8 @@ function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, 
             end
 
             if math.random(1, 100) <= startTriggerInfo.probability then
+                arePortalsEnabled = true
+
                 for k, portalPair in ipairs(portalInfo) do
                     local portal1Usage = 0
 
@@ -455,7 +460,7 @@ function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, 
 
                 if callbacks and isfunction(callbacks.startPortals) then
                     callbacks.startPortals(ent)
-                    arePortalsEnabled = true
+                    canClosePortals = true
                 end
             end
         end
@@ -467,13 +472,13 @@ function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, 
         table.insert(createdEnts, maxAreaTrigger)
 
         function maxAreaTrigger:StartTouch(ent)
-            if ent:IsPlayer() then
-                if arePortalsEnabled and plysInMaxArea[ent] == nil and callbacks and isfunction(callbacks.plyEnterMaxAreas) then
-                    callbacks.plyEnterMaxAreas(ent)
-                end
+            if not ent:IsPlayer() then return end
 
-                plysInMaxArea[ent] = true
+            if arePortalsEnabled and plysInMaxArea[ent] == nil and callbacks and isfunction(callbacks.plyEnterMaxAreas) then
+                callbacks.plyEnterMaxAreas(ent)
             end
+
+            plysInMaxArea[ent] = true
         end
 
         function maxAreaTrigger:Touch(ent)
@@ -489,7 +494,7 @@ function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, 
 
             plysInMaxArea[ent] = false
 
-            timer.Simple(0.3, function()
+            timer.Simple(0.3, function() -- The time a player has to move from a maxAreaTrigger to another
                 if not maxAreaTrigger:IsValid() then return end
 
                 if arePortalsEnabled and not plysInMaxArea[ent] and callbacks and isfunction(callbacks.plyExitMaxAreas) then
