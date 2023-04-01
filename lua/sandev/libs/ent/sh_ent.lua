@@ -213,10 +213,12 @@ end
 -- Set fake classname (By Zaurzo - A.R.C.)
 
 function SEv.Ent:IsClassFake(ent)
+    if not IsValid(ent) then return false end
     return ent:GetNWBool("sev_fake_class_name") and true
 end
 
 function SEv.Ent:SetFakeClass(ent, class)
+    if not IsValid(ent) then return false end
     ent:SetNWString("sev_fake_class_name", class)
 end
 
@@ -238,6 +240,7 @@ function SEv.Ent:IsInfoHidden(ent)
 end
 
 function SEv.Ent:HideInfo(ent, value)
+    if not IsValid(ent) then return false end
     ent:SetNWBool("sev_cover_ent_name", value)
 end
 
