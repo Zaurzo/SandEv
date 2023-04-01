@@ -251,7 +251,7 @@ function SEv.Ent:CallOnCondition(ent, condition, callback, ...)
     local args = { ... }
 
     timer.Create(name, 0.2, 0, function()
-        if not ent:IsValid() then
+        if not IsValid(ent) then
             timer.Remove(name)
             return
         end
