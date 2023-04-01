@@ -368,8 +368,6 @@ function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, 
             end
 
             if math.random(1, 100) <= startTriggerInfo.probability then
-                arePortalsEnabled = true
-
                 for k, portalPair in ipairs(portalInfo) do
                     local portal1Usage = 0
 
@@ -457,6 +455,7 @@ function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, 
 
                 if callbacks and isfunction(callbacks.startPortals) then
                     callbacks.startPortals(ent)
+                    arePortalsEnabled = true
                 end
             end
         end
@@ -501,7 +500,7 @@ function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, 
                     plysInMaxArea[ent] = nil
                 end
 
-                if table.Count(plysInMaxArea) == 0 and #portals > 0 then
+                if arePortalsEnabled and table.Count(plysInMaxArea) == 0 and #portals > 0 then
                     closePortals(ent)
                 end
             end)
