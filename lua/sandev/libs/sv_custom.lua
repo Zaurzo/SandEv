@@ -311,7 +311,6 @@ function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, 
     local portals = {}
     local plysInMaxArea = {} -- States: nil: outside, true: inside, false: exiting
     local arePortalsEnabled = false
-    local canClosePortals = false
     local createdEnts = {}
     local extraId = #ents.FindByClass("sev_portal")
 
@@ -325,10 +324,6 @@ function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, 
     end
 
     local function closePortals(ent)
-        if not canClosePortals then return end
-
-        canClosePortals = false
-
         for k, portal in ipairs(portals) do
             if portal:IsValid() then
                 portal:Remove()
@@ -460,7 +455,6 @@ function SEv.Custom:CreatePortalAreas(instance, eventName, maxAreaTriggersInfo, 
 
                 if callbacks and isfunction(callbacks.startPortals) then
                     callbacks.startPortals(ent)
-                    canClosePortals = true
                 end
             end
         end
