@@ -443,7 +443,7 @@ function SHL:InitSEv()
     isSEvMounted = true
 
     -- Remove temporary detours
-    timer.Simple(10, function()
+    timer.Simple(60, function()
         AddCSLuaFile = AddCSLuaFileInUse
         include = includeInUse
     end)
