@@ -1,12 +1,12 @@
 -- Get the closest player
 
-function SEv.Ply:GetClosestPlayer(pos)
+function SEv.Ply:GetClosestPlayer(pos, dist)
     local plys = player.GetHumans()
 
     if #plys == 0 then return end
 
     local curPly, curPlyPos
-    local curDist = math.huge
+    local curDist = dist or math.huge
 
     for i = 1, #plys do
         local ply = plys[i]
@@ -25,4 +25,18 @@ function SEv.Ply:GetClosestPlayer(pos)
     end
     
     return curPly, curDist
+end
+
+-- Get all players in sphere
+function SEv.Ply:GetPlayersInSphere(origin, radius)
+  local players = player.GetHumans()
+  local radius = radius or 1000
+  local results = {}
+  for _, player in pairs(players) do
+    local distance = (player:GetPos() - origin):Length()
+    if distance <= radius then
+      table.insert(results, player)
+    end
+  end
+  return results
 end
