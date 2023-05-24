@@ -89,6 +89,7 @@ end
 
 function SEv.Log:Debug(debug, msg)
     if not self.enabled then return end
+    if msg == nil then return end
 
     if debug or self.debugAll then
         self:MsgC(colorMap[16], "[SEv] " .. msg)
