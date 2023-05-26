@@ -29,14 +29,14 @@ end
 
 -- Get all players in sphere
 function SEv.Ply:GetPlayersInSphere(origin, radius)
-  local players = player.GetHumans()
-  local radius = radius or 1000
-  local results = {}
-  for _, player in pairs(players) do
-    local distance = (player:GetPos() - origin):Length()
-    if distance <= radius then
-      table.insert(results, player)
+    local players = player.GetHumans()
+    local radius = radius or 1000
+    local results = {}
+    for _, player in ipairs(players) do
+      local distance = (player:GetPos() - origin):LengthSqr()
+      if distance <= radius then
+        table.insert(results, player)
+      end
     end
-  end
-  return results
+    return results
 end
