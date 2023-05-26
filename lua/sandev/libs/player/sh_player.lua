@@ -30,13 +30,13 @@ end
 -- Get all players in sphere
 function SEv.Ply:GetPlayersInSphere(origin, radius)
     local players = player.GetHumans()
-    local radius = radius or 1000
+    local radiusSqr = radius * radius or 1000
     local results = {}
     for _, player in ipairs(players) do
-      local distance = (player:GetPos() - origin):LengthSqr()
-      if distance <= radius then
-        table.insert(results, player)
-      end
+        local distanceSqr = (player:GetPos() - origin):LengthSqr()
+        if distanceSqr <= radiusSqr then
+            table.insert(results, player)
+        end
     end
     return results
 end
