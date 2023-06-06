@@ -59,7 +59,7 @@ end
 hook.Add('EntityEmitSound', 'sev_vehicle_sound_control', function(soundData)
     local ent = soundData.Entity
 
-    if IsValid(ent) and ent:IsVehicle() then
+    if IsValid(ent) and ent:IsVehicle() and not SEv.Vehicle:IsBroken(ent) then
         local vehSoundList = ent.sev_veh_sound_list
 
         if not vehSoundList then
