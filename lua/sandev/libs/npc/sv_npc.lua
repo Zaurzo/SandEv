@@ -1,74 +1,113 @@
 -- Store that the entity is an npc (helps with duplication later)
 
+local npcStalkers = {}
+
 hook.Add("PlayerSpawnedNPC", "sev_set_is_npc", function(ply, npc)
     if IsValid(npc) then
         npc.sev_is_npc = true
     end
 end)
 
--- Attack the closest player
+--[[ 
+    Stalkers are a bit unique.
+    
+    When you kill a Stalker, every Stalker that is visible to you and in the same squad of the killed Stalker will go aggresive 
+    and attack every other player it sees. Even if we set their enemy to something different, it will just set it back to the
+    closest player. We can prevent the attacking of all players by setting their relationship to players to a disposition
+    other than hate, and set it back to D_HT by recreating the same behavior said above.
 
-local function ForceStalkerAttack(npc, ply)
-    -- Note: I wasn't able to assign a squad to the existing stalker and make it attack.
-    --       It was required to define a squad during the npc spawn.
+    -- Zaurzo
+]]
 
-    local squad = npc:GetSquad()
+hook.Add('OnEntityCreated', 'sev_stalker_control', function(ent)
+    if ent:GetClass() == 'npc_stalker' and ent:IsNPC() then
+        SEv.NPC:RestoreMissingFunc(ent, 'AddRelationship') -- Workshop compatibility
 
-    local decoy = ents.Create("npc_stalker")
-    decoy:Activate()
-    decoy:Spawn()
-    decoy:SetPos(Vector(2478.2, 3425.4, -610))
+        if ent.AddRelationship then
+            table.insert(npcStalkers, ent)
 
-    if squad then
-        decoy:SetKeyValue("squadname", squad)
+            ent:AddRelationship('player D_NU 99')
+        end
     end
+end)
 
-    local d = DamageInfo()
-    d:SetDamage(decoy:Health())
-    d:SetAttacker(ply)
-    d:SetDamageType(DMG_DISSOLVE)
+hook.Add('OnNPCKilled', 'sev_stalker_control', function(ent, attacker)
+    if ent:GetClass() == 'npc_stalker' and attacker:IsValid() and attacker:IsPlayer() then
+        local squad = ent:GetSquad()
 
-    ply:ConCommand("hud_deathnotice_time 0") -- So ugly
-    timer.Simple(0.1, function()
-        if not decoy:IsValid() then return end
+        for k, stalker in ipairs(npcStalkers) do
+            if stalker:IsValid() then 
+                if stalker:GetSquad() == squad and stalker:Visible(attacker) then
+                    SEv.NPC:RestoreMissingFunc(stalker, 'AddRelationship') -- Workshop compatibility
 
-        decoy:TakeDamageInfo(d)
-        decoy:Remove()
+                    if stalker.AddRelationship then
+                        stalker:AddRelationship('player D_HT 99')
+                    end
+                end
+            else
+                table.remove(npcStalkers, k)
+            end
+        end
+    end
+end)
 
-        timer.Simple(0.5, function()
-            if not ply:IsValid() then return end
+-- Attack player
 
-            ply:ConCommand("hud_deathnotice_time 6")
-        end)
-    end)
-end
+function SEv.NPC:AttackPlayer(npc, ply, duration)
+    if not IsValid(npc) or not IsValid(ply) or not npc:IsNPC() or not ply:IsPlayer() then return end
 
-function SEv.NPC:AttackClosestPlayer(npc, duration)
-    if not npc or not npc:IsValid() or not npc:IsNPC() then return end
+    self:RestoreMissingFunc(npc, 'AddEntityRelationship') -- Workshop compatibility
+    self:RestoreMissingFunc(npc, 'UpdateEnemyMemory') -- Workshop compatibility
 
-    local ply = SEv.Ply:GetClosestPlayer(npc:GetPos())
+    if npc.AddEntityRelationship and npc.UpdateEnemyMemory and npc.SetEnemy then
+        local isNPCStalker = npc:GetClass() == 'npc_stalker'
 
-    if not IsValid(ply) then return end
+        if isNPCStalker then
+            -- Stalkers will only attack players when this value is set to 1.
+            -- https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/game/server/hl2/npc_stalker.cpp#L221
 
-    if npc:GetClass() == "npc_stalker" then -- Hack to force stalkers to attack. Note: I can't stop the attack.
-        ForceStalkerAttack(npc, ply)
-    elseif npc.AddEntityRelationship then
+            npc:SetSaveValue('m_iPlayerAggression', 1)
+        end
+        
         npc:AddEntityRelationship(ply, D_HT, 99)
         npc:SetEnemy(ply)
         npc:UpdateEnemyMemory(ply, ply:GetPos())
 
-        if duration then -- Untested
-            timer.Simple(duration, function()
-                if not npc:IsValid() then return end
+        if duration then
+            local timerName = 'sev_' .. tostring(npc) .. '_attack_player_' .. tostring(ply)
 
-                npc:ClearEnemyMemory()
+            -- We use timer.Create to stop timer.Simple stacking
+            if timer.Exists(timerName) then
+                timer.Adjust(timerName, duration)
+            else
+                self:RestoreMissingFunc(npc, 'ClearEnemyMemory') -- Workshop compatibility
 
-                if ply:IsValid() then
-                    npc:AddEntityRelationship(ply, D_HT, 0)
-                end
-            end)
+                timer.Create(timerName, duration, 1, function()
+                    if not npc:IsValid() then return end
+
+                    if isNPCStalker then
+                        npc:SetSaveValue('m_iPlayerAggression', 0)
+                    end
+
+                    if ply:IsValid() then
+                        if npc.ClearEnemyMemory then
+                            npc:ClearEnemyMemory(ply)
+                        end
+
+                        if npc.AddEntityRelationship then
+                            npc:AddEntityRelationship(ply, D_HT, 0)
+                        end
+                    end
+                end)
+            end
         end
     end
+end
+
+function SEv.NPC:AttackClosestPlayer(npc, duration)
+    local ply = SEv.Ply:GetClosestPlayer(npc:GetPos())
+
+    self:AttackPlayer(npc, ply, duration)
 end
 
 -- On killed
