@@ -105,9 +105,11 @@ function SEv.NPC:AttackPlayer(npc, ply, duration)
 end
 
 function SEv.NPC:AttackClosestPlayer(npc, duration)
-    local ply = SEv.Ply:GetClosestPlayer(npc:GetPos())
+    if IsValid(npc) and npc:IsNPC() then
+        local ply = SEv.Ply:GetClosestPlayer(npc:GetPos())
 
-    self:AttackPlayer(npc, ply, duration)
+        self:AttackPlayer(npc, ply, duration)
+    end
 end
 
 -- On killed
