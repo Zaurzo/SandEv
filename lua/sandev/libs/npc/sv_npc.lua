@@ -16,10 +16,15 @@ end)
     closest player. We can prevent the attacking of all players by setting their relationship to players to a disposition
     other than hate, and set it back to D_HT by recreating the same behavior said above.
 
+    We don't make it do our changed behavior by default, so if you want Stalkers to focus on a single player use:
+    SEv.NPC:SetStalkerFocus(bool value)
+
     -- Zaurzo
 ]]
 
 hook.Add('OnEntityCreated', 'sev_stalker_control', function(ent)
+    if not SEv.NPC.stalkerFocus then return end
+
     if ent:GetClass() == 'npc_stalker' and ent:IsNPC() then
         SEv.NPC:RestoreMissingFunc(ent, 'AddRelationship') -- Workshop compatibility
 
@@ -32,6 +37,8 @@ hook.Add('OnEntityCreated', 'sev_stalker_control', function(ent)
 end)
 
 hook.Add('OnNPCKilled', 'sev_stalker_control', function(ent, attacker)
+    if not SEv.NPC.stalkerFocus then return end
+
     if ent:GetClass() == 'npc_stalker' and attacker:IsValid() and attacker:IsPlayer() then
         local squad = ent:GetSquad()
 
@@ -58,6 +65,7 @@ function SEv.NPC:AttackPlayer(npc, ply, duration)
 
     self:RestoreMissingFunc(npc, 'AddEntityRelationship') -- Workshop compatibility
     self:RestoreMissingFunc(npc, 'UpdateEnemyMemory') -- Workshop compatibility
+    self:RestoreMissingFunc(npc, 'SetEnemy') -- Workshop compatibility
 
     if npc.AddEntityRelationship and npc.UpdateEnemyMemory and npc.SetEnemy then
         local isNPCStalker = npc:GetClass() == 'npc_stalker'
@@ -129,6 +137,12 @@ end
 
 function SEv.NPC:GetOnKilledCallbacks(npc)
     return npc.sev_on_killed_callback
+end
+
+-- Stalker focus. Should Stalkers follow our behavior and focus on a single player?
+
+function SEv.NPC:SetStalkerFocus(value)
+    self.stalkerFocus = value
 end
 
 hook.Add("OnNPCKilled", "sev_npc_killed_callback", function(npc, attacker, inflictor)
