@@ -161,7 +161,9 @@ SEv = SEv or {
         receivedTab = {}, -- { [string chunksID] = { chunksSubID = int, compressedString = byte string } }
         cheap = {} -- { [string net id] = function callback }
     },
-    NPC = {},
+    NPC = {
+        stalkerFocus = false
+    },
     Ply = {},
     Prop = {},
     Tool = {
@@ -500,10 +502,11 @@ hook.Add("InitPostEntity", "sev_init", function()
     end
 
     -- Lock down some libs after we're done copying them to instances
-    SEv.Util:BlockDirectLibCalls(SEv.Log)
-    SEv.Util:BlockDirectLibCalls(SEv.Lobby)
-    SEv.Util:BlockDirectLibCalls(SEv.Event)
-    SEv.Util:BlockDirectLibCalls(SEv.Event.Memory)
-    SEv.Util:BlockDirectLibCalls(SEv.Event.Memory.Incompatibility)
-    SEv.Util:BlockDirectLibCalls(SEv.Event.Memory.Dependency)
+    SEv.Log = SEv.Util:BlockDirectLibCalls(SEv.Log)
+    SEv.Lobby = SEv.Util:BlockDirectLibCalls(SEv.Lobby)
+    SEv.Event = SEv.Util:BlockDirectLibCalls(SEv.Event)
+
+    SEv.Event.Memory.Incompatibility = SEv.Util:BlockDirectLibCalls(SEv.Event.Memory.Incompatibility)
+    SEv.Event.Memory.Dependency = SEv.Util:BlockDirectLibCalls(SEv.Event.Memory.Dependency)
+    SEv.Event.Memory = SEv.Util:BlockDirectLibCalls(SEv.Event.Memory)
 end)
