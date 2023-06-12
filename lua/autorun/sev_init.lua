@@ -502,11 +502,10 @@ hook.Add("InitPostEntity", "sev_init", function()
     end
 
     -- Lock down some libs after we're done copying them to instances
-    SEv.Log = SEv.Util:BlockDirectLibCalls(SEv.Log)
-    SEv.Lobby = SEv.Util:BlockDirectLibCalls(SEv.Lobby)
-    SEv.Event = SEv.Util:BlockDirectLibCalls(SEv.Event)
-
-    SEv.Event.Memory.Incompatibility = SEv.Util:BlockDirectLibCalls(SEv.Event.Memory.Incompatibility)
-    SEv.Event.Memory.Dependency = SEv.Util:BlockDirectLibCalls(SEv.Event.Memory.Dependency)
-    SEv.Event.Memory = SEv.Util:BlockDirectLibCalls(SEv.Event.Memory)
+    SEv.Util:BlockDirectLibCalls(SEv.Log)
+    SEv.Util:BlockDirectLibCalls(SEv.Lobby)
+    SEv.Util:BlockDirectLibCalls(SEv.Event)
+    SEv.Util:BlockDirectLibCalls(SEv.Event.Memory)
+    SEv.Util:BlockDirectLibCalls(SEv.Event.Memory.Incompatibility)
+    SEv.Util:BlockDirectLibCalls(SEv.Event.Memory.Dependency)
 end)
