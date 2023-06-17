@@ -332,6 +332,11 @@ hook.Add("InitPostEntity", "sev_init", function()
 
     -- Init SEv
     do
+	-- Net
+        if SERVER then
+            util.AddNetworkString("sev_cheap")
+        end
+			
         -- Create data folders
         file.CreateDir(SEv.dataFolder)
 
