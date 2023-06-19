@@ -1,6 +1,6 @@
 -- Instances devmode
 
--- Just to store the state between games
+-- ConVar flags just to store the state between games
 local FCVAR_ARCHIVE_REPLICATED = { FCVAR_ARCHIVE, FCVAR_REPLICATED }
 
 function SEv:AddDevModeToInstance(instance)
@@ -71,7 +71,7 @@ function SEv:AddDevModeToInstance(instance)
         end
     end
 
-    local devModeState = CreateConVar("state_devmode_" .. instance.id, "0", FCVAR_ARCHIVE_REPLICATED)
+    local devModeState = CreateConVar("state_devmode_" .. instance.id , "0", FCVAR_ARCHIVE_REPLICATED)
 
     if SERVER then
         function instance:ToggleDevMode()
@@ -86,19 +86,11 @@ function SEv:AddDevModeToInstance(instance)
             print("[SandEv] " .. instance.id .. " devmode is " .. (instance.devMode and "On" or "Off"))
         end
 
+        concommand.Add("devmode_" .. instance.id .. "_toggle", function() instance:ToggleDevMode() end)    
+
         if devModeState:GetBool() then
             instance:ToggleDevMode()
         end
-
-        cvars.AddChangeCallback("state_devmode_" .. instance.id, function(name, old, new)
-            if new == '1' then
-                instance:EnableDevMode()
-            elseif new == '0' then
-                instance:DisableDevMode()
-            end
-        end)
-
-        concommand.Add("devmode_" .. instance.id .. "_toggle", function() instance:ToggleDevMode() end)    
     else
         hook.Add(instance.id .. "_memories_received", instance.id .. "_auto_dev_mode_cl", function()
             if GetConVar("state_devmode_" .. instance.id):GetBool() then
@@ -148,21 +140,13 @@ if SERVER then
         net.Broadcast()
 
         print("[SandEv] " .. SEv.id .. " devmode is " .. (SEv.devMode and "On" or "Off"))
-    end   
+    end
+
+    concommand.Add("devmode_" .. SEv.id .. "_toggle", function() SEv:ToggleDevMode() end)    
 
     if SEvDevModeState:GetBool() then
         SEv:ToggleDevMode()
     end
-
-    cvars.AddChangeCallback("state_devmode_" .. SEv.id, function(name, old, new)
-        if new == '1' then
-            SEv:EnableDevMode()
-        elseif new == '0' then
-            SEv:DisableDevMode()
-        end
-    end)
-
-    concommand.Add("devmode_" .. SEv.id .. "_toggle", function() SEv:ToggleDevMode() end) 
 else
     hook.Add(SEv.id .. "_memories_received", SEv.id .. "_auto_dev_mode_cl", function()
         if GetConVar("state_devmode_" .. SEv.id):GetBool() then
