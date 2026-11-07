@@ -1,4 +1,4 @@
-local Event = SandEv.Base.Event
+local EventLib = SandEv.Base.Event
 
 ---@param cmdName string
 ---@return SandEv.Instance
@@ -89,7 +89,7 @@ local function ToggleEvent(ply, cmdName, args)
     instance:Print('Toggled ' .. state .. ' event "' .. eventName .. '"')
 end
 
-function Event:InstallDevCommands()
+function EventLib:InstallDevCommands()
     if self._dev_commands_setup then return end
 
     local id = self.Instance.ID
@@ -124,7 +124,7 @@ end
 ---@param convarName string
 ---@param old string
 ---@param new string
-function Event.OnDevModeChanged(convarName, old, new)
+function EventLib.OnDevModeChanged(convarName, old, new)
     if new ~= '1' then return end
 
     local instanceID = convarName:match('devmode_(%w+)_')

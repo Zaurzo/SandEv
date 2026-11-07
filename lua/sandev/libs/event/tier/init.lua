@@ -2,12 +2,12 @@ AddCSLuaFile('shared.lua')
 
 include('shared.lua')
 
-local EntityLib = SandEv.Base.Event
+local EventLib = SandEv.Base.Event
 
 ---Sets the event tier.
 ---@realm server
 ---@param tier number
-function EntityLib:SetTier(tier)
+function EventLib:SetTier(tier)
     self._forced_tier_change = true
     self._tier_cvar:SetInt(tier)
 end
@@ -16,7 +16,7 @@ end
 ---@realm server
 ---@param tier number
 ---@param unreachable boolean
-function EntityLib:SetTierUnreachable(tier, unreachable)
+function EventLib:SetTierUnreachable(tier, unreachable)
     self._unreachable_tiers = self._unreachable_tiers or {}
     self._unreachable_tiers[tier] = unreachable and true or nil
 end
@@ -25,7 +25,7 @@ end
 ---@realm server
 ---@param tier number
 ---@param memory string
-function EntityLib:SetTierMemoryDependency(tier, memory)
+function EventLib:SetTierMemoryDependency(tier, memory)
     self._tier_dependencies = self._tier_dependencies or {}
     self._tier_dependencies[tier] = memory
 end
@@ -34,7 +34,7 @@ end
 ---@realm server
 ---@param tier number
 ---@return boolean reachable
-function EntityLib:IsTierReachable(tier)
+function EventLib:IsTierReachable(tier)
     if self._unreachable_tiers and self._unreachable_tiers[tier] then
         return false
     end
@@ -51,7 +51,7 @@ end
 ---Returns the max possible event tier the player can reach.
 ---@realm server
 ---@return number maxTier
-function EntityLib:GetMaxPossibleTier()
+function EventLib:GetMaxPossibleTier()
     local maxTier = 1
 
     for tier = 2, self:GetMaxTier() do
@@ -70,7 +70,7 @@ end
 ---@param convarName string
 ---@param oldValue string
 ---@param newValue string
-function EntityLib.OnTierChanged(convarName, oldValue, newValue)
+function EventLib.OnTierChanged(convarName, oldValue, newValue)
     local instanceID = convarName:match('^(%w+)_')
     local instance = SandEv:GetInstance(instanceID)
 

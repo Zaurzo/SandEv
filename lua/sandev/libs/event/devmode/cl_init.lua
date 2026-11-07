@@ -1,8 +1,8 @@
 include('shared.lua')
 
-local EntityLib = SandEv.Base.Event
+local EventLib = SandEv.Base.Event
 
-function EntityLib:GetDrawGizmos()
+function EventLib:GetDrawGizmos()
     if self._gizmos_convar ~= nil then
         return self._gizmos_convar:GetBool()
     end
@@ -10,7 +10,7 @@ function EntityLib:GetDrawGizmos()
     return false
 end
 
-function EntityLib:RequestMarkerRenderData()
+function EventLib:RequestMarkerRenderData()
     if not self:GetDrawGizmos() then return end
 
     -- so stupid
@@ -21,7 +21,7 @@ function EntityLib:RequestMarkerRenderData()
     end)
 end
 
-function EntityLib:DrawGizmos()
+function EventLib:DrawGizmos()
     local events = self._events
     if not events or not self:GetDrawGizmos() then return end
 
@@ -33,7 +33,7 @@ function EntityLib:DrawGizmos()
 end
 
 ---@realm client
-function EntityLib.OnDrawGizmosChanged(convarName, old, new)
+function EventLib.OnDrawGizmosChanged(convarName, old, new)
     if new ~= '1' then return end
 
     local instanceID = convarName:match('(%w+)_')

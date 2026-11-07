@@ -1,6 +1,6 @@
 ---@class SandEv.EventLib : SandEv.Library
-local EntityLib = SandEv.Base:Library()
-SandEv.Base.Event = EntityLib
+local EventLib = SandEv.Base:Library()
+SandEv.Base.Event = EventLib
 
 if SERVER then
     include('devmode/init.lua')
@@ -12,7 +12,7 @@ else
     include('tier/cl_init.lua')
 end
 
-function EntityLib:Init()
+function EventLib:Init()
     local tierCvarName = self.Instance.ID .. '_tier'
     local tier = CreateConVar(
         tierCvarName, 
@@ -51,7 +51,7 @@ end
 ---@param category string The category this event belongs to.
 ---@param tier number The minimum tier required for this event to run.
 ---@return SandEv.Event
-function EntityLib:New(id, category, tier)
+function EventLib:New(id, category, tier)
     local event = {
         ID = id,
         Category = category,
@@ -62,13 +62,13 @@ function EntityLib:New(id, category, tier)
     event.__index = event
     event.__newindex = EventNewIndex
 
-    return setmetatable(event, EntityLib.Base)
+    return setmetatable(event, EventLib.Base)
 end
 
 ---Registers the provided event.
 ---@realm shared
 ---@param event SandEv.Event
-function EntityLib:Register(event)
+function EventLib:Register(event)
     event:Init()
     
     self._events = self._events or {}
@@ -79,11 +79,11 @@ end
 ---@realm shared
 ---@param id string
 ---@return SandEv.Event
-function EntityLib:Get(id)
+function EventLib:Get(id)
     return self._events and self._events[id]
 end
 
-function EntityLib:GetCurrent(id)
+function EventLib:GetCurrent(id)
     local event = self:Get(id)
     return event and event.Current
 end
@@ -91,7 +91,7 @@ end
 ---Returns a list of the IDs of all currently registered events.
 ---@realm shared
 ---@return SandEv.Event[] eventList
-function EntityLib:GetList()
+function EventLib:GetList()
     if not self._events then
         return {}
     end
@@ -127,7 +127,7 @@ local function IncludeEvents(instance, path)
     end
 end
 
-function EntityLib:Initialize(eventTier)
+function EventLib:Initialize(eventTier)
     local eventsPath = self.Instance.ID .. '/events/'
 
     if not eventTier then
