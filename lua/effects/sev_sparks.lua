@@ -21,6 +21,8 @@ function EFFECT:Init(data)
             spark:SetVelocity(VectorRand() * 50)
         end
     end
+
+    emitter:Finish()
 end
 
 function EFFECT:Think()
