@@ -30,20 +30,21 @@ end
 
 function MetaLib:Convert(ent, value)
     local meta = getmetatable(ent)
+    local tbl = getTable(ent)
 
     if not value then
+        tbl._sev_meta_converted = nil
+
         -- getmetatable respects the __metatable field
         -- so if the entity is converted it will return the original metatable
         return debug.setmetatable(ent, meta)
     end
 
-    local tbl = getTable(ent)
-
     if tbl._sev_meta_converted then
         return self.Instance:Error('entity meta is already converted')
     end
 
-    tbl._sev_meta_converted = value and true or nil
+    tbl._sev_meta_converted = true
     
     setmetatable(tbl, GetEntityTableMeta(meta))
 
