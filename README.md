@@ -1,0 +1,2 @@
+# What Is This?
+**SandEv** is a Garry's Mod event framework for Sandbox originally developed by Xalalau Xubilozo. It is the framework used to build the events seen in the popular map **gm_construct 13 beta**. This repository is a **work-in-progress** rewrite of the framework developed by Zaurzo. Everything you see here is subject to change. Documentation may be minimal right now.
