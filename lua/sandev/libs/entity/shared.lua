@@ -11,7 +11,8 @@ EntityLib.NetFlag = {
     PhysgunBlocked = bit.lshift(1, 1),
     ToolgunBlocked = bit.lshift(1, 2),
     PropertiesBlocked = bit.lshift(1, 3),
-    Muted = bit.lshift(1, 4)
+    LightBlocked = bit.lshift(1, 4),
+    Muted = bit.lshift(1, 5)
 }
 
 include('sh_meta.lua')
@@ -66,16 +67,41 @@ end
 ---Returns true if the physgun is blocked from being used on the entity.
 ---@realm shared
 ---@param ent Entity
+---@return boolean
 function EntityLib:IsPhysgunBlocked(ent)
     return self:GetNetFlag(ent, NetFlag.PhysgunBlocked)
 end
 
+---Blocks the properties menu from being used on an entity.
+---@realm shared
+---@param ent Entity
+---@param value boolean If the properties menu should be blocked or not.
 function EntityLib:BlockPropertiesMenu(ent, value)
     self:SetNetFlag(ent, NetFlag.PropertiesBlocked, value)
 end
 
+---Returns true if the properties menu is blocked from being used on an entity.
+---@realm shared
+---@param ent Entity
+---@return boolean
 function EntityLib:IsPropertiesMenuBlocked(ent)
     return self:GetNetFlag(ent, NetFlag.PropertiesBlocked)
+end
+
+---Blocks DynamicLight from being used on an entity.
+---@realm shared
+---@param ent Entity
+---@param value boolean
+function EntityLib:BlockLight(ent, value)
+    self:SetNetFlag(ent, NetFlag.LightBlocked, value)
+end
+
+---Returns true if DynamicLight is blocked from being used on an entity.
+---@realm shared
+---@param ent Entity
+---@return boolean
+function EntityLib:IsLightBlocked(ent)
+    return self:GetNetFlag(ent, NetFlag.LightBlocked)
 end
 
 ---Sets whether or not all sounds coming from the provided entity should be muted.

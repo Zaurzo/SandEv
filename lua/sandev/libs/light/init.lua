@@ -1,0 +1,94 @@
+---@class SandEv.LightLib : SandEv.Library
+local LightLib = SandEv.Base:Library()
+SandEv.Base.Light = LightLib
+
+function LightLib:Init()
+    local manuals = LightLib._manuals
+    manuals.__index = manuals
+
+    self._manuals = manuals
+end
+
+local LightManual = include('sv_manual.lua') ---@class SandEv.Light.Manual
+
+---@return SandEv.Light.Manual
+function LightLib:Manual()
+    return setmetatable({}, LightManual)
+end
+
+---@param class string
+---@param manual SandEv.Light.Manual
+function LightLib:RegisterManual(class, manual)
+    self._manuals = self._manuals or {}
+    self._manuals[class] = manual
+end
+
+function LightLib:RunManual(light, methodName, ...)
+    local manual = self._manuals and self._manuals[light:GetClass()]
+
+    if not manual then
+        return self.Instance:Error('no registered manual for light class')
+    end
+
+    local method = manual[methodName]
+
+    return method(manual, light, ...)
+end
+
+function LightLib:SetOn(light, value)
+    return self:RunManual(light, 'SetOn', value)
+end
+
+function LightLib:IsOn(light)
+    return self:RunManual(light, 'IsOn')
+end
+
+function LightLib:SetBurnResistant(light, value)
+    light._sev_burn_resistant = value and true or nil
+end
+
+function LightLib:IsBurnResistant(light)
+    return light._sev_burn_resistant or false
+end
+
+function LightLib:Burn(light)
+    if not self:IsBurnResistant(light) then
+        self._sev_light_burned = true
+
+        return self:RunManual(light, 'Burn')
+    end
+end
+
+function LightLib:IsBurned(light)
+    return self._sev_light_burned or false
+end
+
+---@param instance SandEv.LightLib
+local function Fade(instance, light)
+    if instance:IsBurned(light) then return end
+    
+    local hookName = 'sev_fade_light_' .. tostring(light)
+    local start = CurTime()
+
+    hook.Add('Tick', hookName, function()
+        if not light:IsValid() then
+            return hook.Remove('Tick', hookName)
+        end
+
+        local brightness = instance:RunManual(light, 'GetBrightness')
+        local value = Lerp(CurTime() - start, brightness, 0)
+
+        instance:RunManual(light, 'SetBrightness', value)
+
+        if value <= 0 then
+            return hook.Remove('Tick', hookName)
+        end
+    end)
+end
+
+function LightLib:FadeOut(light)
+    Fade(self, light)
+end
+
+-- Register base manuals
+include('manuals/sv_gmod.lua')
