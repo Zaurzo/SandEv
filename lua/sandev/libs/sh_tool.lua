@@ -61,39 +61,3 @@ function ToolLib:Load()
 
     self._loaded = true
 end
-
-do return end
-if SERVER then return end
-
----@param toolLib SandEv.ToolLib
-local function PopulateTools(toolLib)
-    for id, tool in pairs(toolLib:GetAll()) do
-        if tool.AddToMenu == false then continue end
-
-        spawnmenu.AddToolMenuOption(
-            tool.Tab or 'Main',
-            tool.Category or 'New Category',
-            id,
-            tool.Name or ('#' .. id),
-            tool.Command or ('gmod_tool ' .. id),
-            tool.ConfigName or id,
-            tool.BuildCPanel
-        )
-    end
-end
-
-hook.Add('PopulateToolMenu', 'AddSToolsToMenu', function()
-    local populateBaseTools = false
-
-    for _, instance in SandEv:Instances() do
-        if instance:IsDevModeEnabled() then
-            PopulateTools(instance.Tool)
-
-            populateBaseTools = true
-        end
-    end
-
-    if populateBaseTools then
-        PopulateTools(ToolLib)
-    end
-end)
