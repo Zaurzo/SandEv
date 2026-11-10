@@ -53,8 +53,8 @@ function LightLib:IsBurnResistant(light)
 end
 
 function LightLib:Burn(light)
-    if not self:IsBurnResistant(light) then
-        self._sev_light_burned = true
+    if not self:IsBurned(light) and not self:IsBurnResistant(light) then
+        light._sev_light_burned = true
 
         return self:RunManual(light, 'Burn')
     end
