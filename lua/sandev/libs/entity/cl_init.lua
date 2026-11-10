@@ -1,6 +1,9 @@
 include('shared.lua')
 
 local EntityLib = SandEv.Base.Entity
+
+-- Properties Menu --
+
 local properties_GetHovered = properties.GetHovered
 
 function properties.GetHovered(...)
@@ -12,8 +15,22 @@ function properties.GetHovered(...)
     end
 end
 
+-- Lights --
+
 local _DynamicLight = DynamicLight
 local Entity = Entity
+
+-- This is hacky, but I'm creating a dummy dlight just for the edge case 
+-- that someone using the function doesn't check for nil.
+-- 
+-- Note: DynamicLight creates a new userdata every call. This may be changed in
+-- a future update, so it's best I keep a look out.
+local dummyDLight = DynamicLight(0)
+
+debug.setmetatable(dummyDLight, {
+    __newindex = {},
+    __metatable = getmetatable(dummyDLight)
+})
 
 function DynamicLight(index, ...)
     local ent = Entity(index)
@@ -22,7 +39,9 @@ function DynamicLight(index, ...)
     -- Note: This won't catch everything
     local isLightBlocked = IsValid(ent) and EntityLib:IsLightBlocked(ent)
 
-    if not isLightBlocked then
-        return _DynamicLight(index, ...)
+    if isLightBlocked then
+        return dummyDLight
     end
+
+    return _DynamicLight(index, ...)
 end
