@@ -61,7 +61,7 @@ function LightLib:Burn(light)
 end
 
 function LightLib:IsBurned(light)
-    return self._sev_light_burned or false
+    return light._sev_light_burned or false
 end
 
 ---@param instance SandEv.LightLib
