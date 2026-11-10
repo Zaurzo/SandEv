@@ -1,20 +1,5 @@
 AddCSLuaFile()
 
-require('netcheap')
-
-SandEv = SandEv or {}
-
-SandEv.Colors = {
-    Red = Color(255, 0, 0),
-    Orange = Color(255, 127, 0),
-    Yellow = Color(255, 255, 0),
-    Green = Color(0, 255, 0),
-    Blue = Color(0, 0, 255),
-    Pink = Color(255, 0, 255),
-    Purple = Color(179, 0, 255),
-    Cyan = Color(0, 255, 255)
-}
-
 include('sh_util.lua')
 
 if CLIENT then
@@ -190,44 +175,37 @@ end
 
 -- Load instances
 
-hook.Add('InitPostEntity', 'sev_post_init', function()
-    local gm = gmod.GetGamemode()
-    if not gm.IsSandboxDerived then return end -- Sandbox family only
+local instanceFiles = file.Find('lua/sandev/instances/*.lua', 'GAME')
 
-    local files = file.Find('lua/sandev/instances/*.lua', 'GAME')
+for _, instanceFileName in ipairs(instanceFiles) do
+    local instance = include('sandev/instances/' .. instanceFileName) ---@as SandEv.Instance
 
-    for _, instanceFileName in ipairs(files) do
-        local instance = include('sandev/instances/' .. instanceFileName) ---@as SandEv.Instance
+    if instance then
+        instance.IN_MAP = table.HasValue(instance:GetMaps(), game.GetMap())
 
-        if instance then
-            instance.IN_MAP = table.HasValue(instance:GetMaps(), game.GetMap())
-
-            if instance.AutoIncludeLibraries then
-                instance:IncludeLibraries()
-            end
-
-            SandEv:RegisterInstance(instance)
+        if instance.AutoIncludeLibraries then
+            instance:IncludeLibraries()
         end
+
+        SandEv:RegisterInstance(instance)
+    end
+end
+
+for id, instance in pairs(registeredInstances) do
+    if SERVER then
+        instance.Event:Initialize()
+    else
+        instance.Memory:RequestMemories()
     end
 
-    for id, instance in pairs(registeredInstances) do
-        if SERVER then
-            instance.Event:Initialize()
-        else
-            instance.Memory:RequestMemories()
-        end
-
-        if instance:IsDevModeEnabled() then
-            instance.Tool:Load()
-        end
-
-        instance:Initialize()
-        
-        hook.Run(id .. '_initialized')
+    if instance:IsDevModeEnabled() then
+        instance.Tool:Load()
     end
 
-    hook.Run('sandev_initialized')
-end)
+    instance:Initialize()
+    
+    hook.Run(id .. '_initialized')
+end
 
 hook.Add('PostCleanupMap', 'sandev_load_events', function()
     for _, instance in pairs(registeredInstances) do
@@ -253,3 +231,5 @@ else
         net.SendToServer()
     end)
 end
+
+hook.Run('sandev_initialized')
