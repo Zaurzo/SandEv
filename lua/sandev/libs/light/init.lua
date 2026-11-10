@@ -92,4 +92,14 @@ function LightLib:FadeOut(light)
 end
 
 -- Register base manuals
+
 include('manuals/sv_gmod.lua')
+include('manuals/sv_source.lua')
+
+-- Hooks
+
+hook.Add('AcceptInput', 'sev_burned_light_control', function(ent, input)
+    if LightLib:IsBurned(ent) and input:lower() == 'turnon' then
+        return true
+    end
+end)
