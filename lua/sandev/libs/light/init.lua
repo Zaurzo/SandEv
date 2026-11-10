@@ -2,11 +2,13 @@
 local LightLib = SandEv.Base:Library()
 SandEv.Base.Light = LightLib
 
-function LightLib:Init()
-    local manuals = LightLib._manuals
-    manuals.__index = manuals
+local baseManuals = {}
+baseManuals.__index = baseManuals
 
-    self._manuals = manuals
+LightLib._manuals = baseManuals
+
+function LightLib:Init()
+    self._manuals = setmetatable({}, baseManuals)
 end
 
 local LightManual = include('sv_manual.lua') ---@class SandEv.Light.Manual
@@ -19,7 +21,6 @@ end
 ---@param class string
 ---@param manual SandEv.Light.Manual
 function LightLib:RegisterManual(class, manual)
-    self._manuals = self._manuals or {}
     self._manuals[class] = manual
 end
 
