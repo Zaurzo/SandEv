@@ -26,11 +26,17 @@ local Entity = Entity
 -- Note: DynamicLight creates a new userdata every call. This may be changed in
 -- a future update, so it's best I keep a look out.
 local dummyDLight = DynamicLight(0)
+local meta = getmetatable(dummyDLight)
+local dummyMeta = {}
 
-debug.setmetatable(dummyDLight, {
-    __newindex = {},
-    __metatable = getmetatable(dummyDLight)
-})
+for k, v in pairs(meta) do 
+    dummyMeta[k] = v 
+end
+
+dummyMeta.__newindex = function() end
+dummyMeta.__meta = meta
+
+debug.setmetatable(dummyDLight, dummyMeta)
 
 function DynamicLight(index, ...)
     local ent = Entity(index)
