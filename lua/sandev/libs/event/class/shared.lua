@@ -25,7 +25,7 @@ function EventBase:Init()
 
     self._enabled = self:GetTier() <= self.Instance.Event:GetTier()
     self._memory_dependency = GetMemoryLookup('Dependencies')
-    self._memory_incompatible = GetMemoryLookup('Incompatibilites')
+    self._memory_incompatible = GetMemoryLookup('Incompatibilities')
     self._memory_provides = GetMemoryLookup('Provisions')
 end
 
