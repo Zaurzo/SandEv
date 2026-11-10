@@ -15,6 +15,8 @@ SandEv.Colors = {
     Cyan = Color(0, 255, 255)
 }
 
+include('sh_util.lua')
+
 if CLIENT then
     local gizmoAlpha = CreateClientConVar(
         'sandev_event_gizmo_alpha', 

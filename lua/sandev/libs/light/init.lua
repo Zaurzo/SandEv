@@ -2,46 +2,43 @@
 local LightLib = SandEv.Base:Library()
 SandEv.Base.Light = LightLib
 
-local baseManuals = {}
-baseManuals.__index = baseManuals
+include('sv_adapter.lua')
 
-LightLib._manuals = baseManuals
+LightLib._adapters = {}
+LightLib._adapters.__index = LightLib._adapters
 
 function LightLib:Init()
-    self._manuals = setmetatable({}, baseManuals)
+    self._adapters = setmetatable({}, LightLib._adapters)
 end
 
-local LightManual = include('sv_manual.lua') ---@class SandEv.Light.Manual
-
----@return SandEv.Light.Manual
-function LightLib:Manual()
-    return setmetatable({}, LightManual)
+---@return SandEv.Light.Adapter
+function LightLib:Adapter()
+    return self.AdapterInterface:extend()
 end
 
 ---@param class string
----@param manual SandEv.Light.Manual
-function LightLib:RegisterManual(class, manual)
-    self._manuals[class] = manual
+---@param adapter SandEv.Light.Adapter
+function LightLib:RegisterAdapter(class, adapter)
+    adapter:check()
+
+    self._adapters[class] = adapter
 end
 
-function LightLib:RunManual(light, methodName, ...)
-    local manual = self._manuals and self._manuals[light:GetClass()]
+---@param self SandEv.LightLib
+local function RunAdapter(self, light, methodName, ...)
+    local adapter = self._adapters[light:GetClass()]
+    if not adapter then return end
 
-    if not manual then
-        return self.Instance:Error('no registered manual for light class')
-    end
-
-    local method = manual[methodName]
-
-    return method(manual, light, ...)
+    local method = adapter[methodName]
+    return method(adapter, light, ...)
 end
 
 function LightLib:SetOn(light, value)
-    return self:RunManual(light, 'SetOn', value)
+    return RunAdapter(self, light, 'SetOn', value)
 end
 
 function LightLib:IsOn(light)
-    return self:RunManual(light, 'IsOn')
+    return RunAdapter(self, light, 'IsOn')
 end
 
 function LightLib:SetBurnResistant(light, value)
@@ -56,7 +53,7 @@ function LightLib:Burn(light)
     if not self:IsBurned(light) and not self:IsBurnResistant(light) then
         light._sev_light_burned = true
 
-        return self:RunManual(light, 'Burn')
+        return RunAdapter(self, light, 'Burn')
     end
 end
 
@@ -64,9 +61,9 @@ function LightLib:IsBurned(light)
     return light._sev_light_burned or false
 end
 
----@param instance SandEv.LightLib
-local function Fade(instance, light)
-    if instance:IsBurned(light) then return end
+---@param self SandEv.LightLib
+local function Fade(self, light)
+    if self:IsBurned(light) then return end
     
     local hookName = 'sev_fade_light_' .. tostring(light)
     local start = CurTime()
@@ -76,10 +73,10 @@ local function Fade(instance, light)
             return hook.Remove('Tick', hookName)
         end
 
-        local brightness = instance:RunManual(light, 'GetBrightness')
+        local brightness = RunAdapter(self, light, 'GetBrightness')
         local value = Lerp(CurTime() - start, brightness, 0)
 
-        instance:RunManual(light, 'SetBrightness', value)
+        RunAdapter(self, light, 'SetBrightness', value)
 
         if value <= 0 then
             return hook.Remove('Tick', hookName)
@@ -91,10 +88,10 @@ function LightLib:FadeOut(light)
     Fade(self, light)
 end
 
--- Register base manuals
+-- Register base adapters
 
-include('manuals/sv_gmod.lua')
-include('manuals/sv_source.lua')
+include('adapters/sv_gmod.lua')
+include('adapters/sv_source.lua')
 
 -- Hooks
 

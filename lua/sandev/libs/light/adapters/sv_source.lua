@@ -1,7 +1,7 @@
----@class EnvProjectedTextureManual : SandEv.Light.Manual
-local EnvProjectedTextureManual = SandEv.Base.Light:Manual()
+---@class EnvProjectedTextureAdapter : SandEv.Light.Adapter
+local EnvProjectedTextureAdapter = SandEv.Base.Light:Adapter()
 
-function EnvProjectedTextureManual:SetOn(light, value)
+function EnvProjectedTextureAdapter:SetOn(light, value)
     if value then
         light:Fire('TurnOn')
     else
@@ -9,7 +9,7 @@ function EnvProjectedTextureManual:SetOn(light, value)
     end
 end
 
-function EnvProjectedTextureManual:IsOn(light)
+function EnvProjectedTextureAdapter:IsOn(light)
     return light:GetInternalVariable('m_bState')
 end
 
@@ -22,19 +22,19 @@ local function GetColor(light)
 end
 
 -- Warning: Original color will be lost if you set brightness to near or equal 0
-function EnvProjectedTextureManual:SetBrightness(light, brightness)
+function EnvProjectedTextureAdapter:SetBrightness(light, brightness)
     local color = GetColor(light)
-    color:SetBrightness(brightness)
 
+    color:SetBrightness(brightness)
     light:SetKeyValue('lightcolor', tostring(color))
 end
 
-function EnvProjectedTextureManual:GetBrightness(light)
+function EnvProjectedTextureAdapter:GetBrightness(light)
     return GetColor(light):GetBrightness()
 end
 
-function EnvProjectedTextureManual:Burn(light)
+function EnvProjectedTextureAdapter:Burn(light)
     self:SetOn(light, false)
 end
 
-SandEv.Base.Light:RegisterManual('env_projectedtexture', EnvProjectedTextureManual)
+SandEv.Base.Light:RegisterAdapter('env_projectedtexture', EnvProjectedTextureAdapter)
