@@ -84,6 +84,8 @@ function ENT:Touch(ent)
 
         self:OnEnter(ent)
         self:NextThink(CurTime())
+
+        ent._sev_touched_trigger = true
     end
 
     self:OnStay(ent)
@@ -103,3 +105,21 @@ end
 
 function ENT:OnExit(ent)
 end
+
+hook.Add('EntityRemoved', 'sev_spherical_triggers', function(ent)
+    if not ent._sev_touched_trigger then return end
+    
+    local triggers = SandEv.Base.Entity:FindBasedOn('sev_trigger', true)
+
+    for _, trigger in ipairs(triggers) do
+        if not trigger:GetSpherical() then continue end
+
+        local inSphere = trigger._in_sphere
+
+        if inSphere[ent] then
+            trigger:OnExit(ent)
+
+            inSphere[ent] = nil
+        end
+    end
+end)

@@ -145,6 +145,26 @@ function EntityLib:GetClosest(pos, predicate)
     return closestEnt
 end
 
+---Returns a list of all entities based on a class.
+---@realm shared
+---@generic T : Entity
+---@param baseClass `T`
+---@param sameClass? boolean If entities that are the base class should also be included.
+---@return T[]
+function EntityLib:FindBasedOn(baseClass, sameClass)
+    local list = {}
+
+    for _, ent in ents.Iterator() do
+        local class = ent:GetClass()
+
+        if (sameClass and class == baseClass) or scripted_ents.IsBasedOn(class, baseClass) then
+            table.insert(list, ent)
+        end
+    end
+
+    return list
+end
+
 -- Hooks
 
 hook.Add('EntityEmitSound', 'SandEv.Entityity_sound_control', function(data)
