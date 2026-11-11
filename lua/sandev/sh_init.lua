@@ -178,20 +178,16 @@ end
 local instanceFiles = file.Find('lua/sandev/instances/*.lua', 'GAME')
 
 for _, instanceFileName in ipairs(instanceFiles) do
-    local instance = include('sandev/instances/' .. instanceFileName) ---@as SandEv.Instance
-
-    if instance then
-        instance.IN_MAP = table.HasValue(instance:GetMaps(), game.GetMap())
-
-        if instance.AutoIncludeLibraries then
-            instance:IncludeLibraries()
-        end
-
-        SandEv:RegisterInstance(instance)
-    end
+    include('sandev/instances/' .. instanceFileName)
 end
 
 for id, instance in pairs(registeredInstances) do
+    instance.IN_MAP = table.HasValue(instance:GetMaps(), game.GetMap())
+
+    if instance.AutoIncludeLibraries then
+        instance:IncludeLibraries()
+    end
+
     if SERVER then
         instance.Event:Initialize()
     else
