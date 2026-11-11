@@ -34,7 +34,7 @@ for k, v in pairs(meta) do
 end
 
 dummyMeta.__newindex = function() end
-dummyMeta.__meta = meta
+dummyMeta.__metatable = meta
 
 debug.setmetatable(dummyDLight, dummyMeta)
 
