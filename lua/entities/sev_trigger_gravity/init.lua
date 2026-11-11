@@ -12,7 +12,7 @@ function ENT:Initialize()
     self._in_brush = {}
 end
 
-function ENT:StartTouch(ent)
+function ENT:OnEnter(ent)
     self._in_brush[ent] = ent:GetGravity()
 
     ent:SetGravity(self:GetBrushGravity())
@@ -24,7 +24,7 @@ local function RestoreGravity(trigger, ent, storedGravity)
     end
 end
 
-function ENT:EndTouch(ent)
+function ENT:OnExit(ent)
     local storedGravity = self._in_brush[ent]
 
     if storedGravity then

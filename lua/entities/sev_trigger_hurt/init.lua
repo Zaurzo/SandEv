@@ -25,13 +25,13 @@ local function Hurt(trigger, ent)
     ent:TakeDamageInfo(dmgInfo)
 end
 
-function ENT:StartTouch(ent)
+function ENT:OnEnter(ent)
     if self:GetOneShot() then
         Hurt(self, ent)
     end
 end
 
-function ENT:Touch(ent)
+function ENT:OnStay(ent)
     if not self:GetOneShot() then
         Hurt(self, ent)
     end
