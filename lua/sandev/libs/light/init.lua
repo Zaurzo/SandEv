@@ -16,6 +16,12 @@ function LightLib:Adapter()
     return self.AdapterInterface:extend()
 end
 
+---@param light Entity
+---@return SandEv.Light.Adapter
+function LightLib:GetAdapter(light)
+    return self._adapters[light:GetClass()]
+end
+
 ---@param class string
 ---@param adapter SandEv.Light.Adapter
 function LightLib:RegisterAdapter(class, adapter)
@@ -26,7 +32,7 @@ end
 
 ---@param self SandEv.LightLib
 local function RunAdapter(self, light, methodName, ...)
-    local adapter = self._adapters[light:GetClass()]
+    local adapter = self:GetAdapter(light)
     if not adapter then return end
 
     local method = adapter[methodName]
@@ -50,11 +56,12 @@ function LightLib:IsBurnResistant(light)
 end
 
 function LightLib:Burn(light)
-    if not self:IsBurned(light) and not self:IsBurnResistant(light) then
-        light._sev_light_burned = true
+    if not self:GetAdapter(light) then return end
+    if self:IsBurned(light) or self:IsBurnResistant(light) then return end
 
-        return RunAdapter(self, light, 'Burn')
-    end
+    light._sev_light_burned = true
+
+    return RunAdapter(self, light, 'Burn')
 end
 
 function LightLib:IsBurned(light)
