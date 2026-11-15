@@ -13,7 +13,6 @@ function ENT:Setup(event, min, max)
     self:SetTrigger(true)
     self:SetSolid(SOLID_BBOX)
     self:SetCollisionBounds(self:GetMins(), self:GetMaxs())
-    self:NextThink(math.huge)
 end
 
 ---@param event SandEv.Event
@@ -48,11 +47,8 @@ local function IsInSphere(self, ent)
     return pos:DistToSqr(hit) <= (self:GetRadius() ^ 2)
 end
 
-function ENT:Think()
-    if not self:GetSpherical() then
-        return true
-    end
-
+---@param self sev_trigger
+local function SphereThink(self)
     local inSphere = self._in_sphere
 
     for ent in pairs(inSphere) do
@@ -68,10 +64,10 @@ function ENT:Think()
     end
 
     if table.IsEmpty(inSphere) then
-        self:NextThink(math.huge)
-    else
-        self:NextThink(CurTime())
+        self.Think = nil
     end
+
+    self:NextThink(CurTime())
 
     return true
 end
@@ -97,7 +93,7 @@ function ENT:Touch(ent)
         self:OnEnter(ent)
         self:NextThink(CurTime())
 
-        ent._sev_touched_trigger = true
+        self.Think = SphereThink
     end
 
     self:OnStay(ent)
