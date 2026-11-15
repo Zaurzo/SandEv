@@ -5,6 +5,8 @@ include('shared.lua')
 
 DEFINE_BASECLASS('sev_brush')
 
+local sphericalTriggerList = {}
+
 function ENT:Setup(event, min, max)
     BaseClass.Setup(self, event, min, max)
 
@@ -18,13 +20,24 @@ end
 ---@param radius number
 function ENT:SetupSphere(event, pos, radius)
     local size = Vector(radius, radius, radius)
-    local min, max = pos + -size, pos + size
+    local mins, maxs = pos + -size, pos + size
 
-    self:Setup(event, min, max)
+    self:Setup(event, mins, maxs)
     self:SetSpherical(true)
     self:SetRadius(radius)
 
     self._in_sphere = {}
+
+    table.insert(sphericalTriggerList, self)
+end
+
+function ENT:OnEnter(ent)
+end
+
+function ENT:OnStay(ent)
+end
+
+function ENT:OnExit(ent)
 end
 
 ---@param self sev_trigger
@@ -96,29 +109,17 @@ function ENT:EndTouch(ent)
     end
 end
 
-function ENT:OnEnter(ent)
-end
-
-function ENT:OnStay(ent)
-end
-
-function ENT:OnExit(ent)
+function ENT:OnRemove()
+    table.RemoveByValue(sphericalTriggerList, self)
 end
 
 hook.Add('EntityRemoved', 'sev_spherical_triggers', function(ent)
-    if not ent._sev_touched_trigger then return end
-    
-    local triggers = SandEv.Base.Entity:FindBasedOn('sev_trigger', true)
-
-    for _, trigger in ipairs(triggers) do
-        if not trigger:GetSpherical() then continue end
-
+    for _, trigger in ipairs(sphericalTriggerList) do
         local inSphere = trigger._in_sphere
+        if not inSphere[ent] then continue end
 
-        if inSphere[ent] then
-            trigger:OnExit(ent)
+        trigger:OnExit(ent)
 
-            inSphere[ent] = nil
-        end
+        inSphere[ent] = nil
     end
 end)
