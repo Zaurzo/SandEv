@@ -6,7 +6,7 @@ local MAX_DISTANCE = 1000
 
 function ENT:DrawSphere(pos, radius, color)
     local a = color.a
-    local lo, la = 15, 15
+    local lo, la = 18, 12
 
     color.a = SandEv:GetGizmoAlpha() * 255
 
