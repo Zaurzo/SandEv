@@ -2,14 +2,28 @@ AddCSLuaFile('shared.lua')
 
 include('shared.lua')
 
-AccessorFunc(ENT, '_gravity', 'BrushGravity', FORCE_NUMBER)
-
 function ENT:Initialize()
     self.BaseClass.Initialize(self)
 
     self:SetBrushGravity(0)
 
     self._in_brush = {}
+end
+
+---@param value number
+function ENT:SetBrushGravity(value)
+    for ent in pairs(self._in_brush) do
+        if ent:IsValid() then
+            ent:SetGravity(value)
+        end
+    end
+
+    self._gravity = value
+end
+
+---@return number gravity
+function ENT:GetBrushGravity()
+    return self._gravity
 end
 
 function ENT:OnEnter(ent)
