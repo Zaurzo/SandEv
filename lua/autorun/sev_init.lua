@@ -23,7 +23,7 @@ local function InitSandEV()
         include('sandev/sh_init.lua')
     end
 
-    hook.Remove('InitPostEntity', 'sev_initialize')
+    hook.Remove('Initialize', 'sandev')
 end
 
-hook.Add('InitPostEntity', 'sev_initialize', InitSandEV)
+hook.Add('Initialize', 'sandev', InitSandEV)

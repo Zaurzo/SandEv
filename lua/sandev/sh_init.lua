@@ -181,27 +181,34 @@ for _, instanceFileName in ipairs(instanceFiles) do
     include('sandev/instances/' .. instanceFileName)
 end
 
-for id, instance in pairs(registeredInstances) do
+for _, instance in pairs(registeredInstances) do
     instance.IN_MAP = table.HasValue(instance:GetMaps(), game.GetMap())
 
     if instance.AutoIncludeLibraries then
         instance:IncludeLibraries()
     end
-
-    if SERVER then
-        instance.Event:Initialize()
-    else
-        instance.Memory:RequestMemories()
-    end
-
-    if instance:IsDevModeEnabled() then
-        instance.Tool:Load()
-    end
-
-    instance:Initialize()
-    
-    hook.Run(id .. '_initialized')
 end
+
+hook.Add('InitPostEntity', 'sandev_instance_init', function()
+    for id, instance in pairs(registeredInstances) do
+        if SERVER then
+            instance.Event:Initialize()
+        else
+            instance.Memory:RequestMemories()
+        end
+
+        if instance:IsDevModeEnabled() then
+            instance.Tool:Load()
+        end
+
+        instance:Initialize()
+        
+        hook.Run(id .. '_initialized')
+    end
+
+    hook.Run('sandev_initialized')
+    hook.Remove('InitPostEntity', 'sandev_instance_init')
+end)
 
 hook.Add('PostCleanupMap', 'sandev_load_events', function()
     for _, instance in pairs(registeredInstances) do
@@ -227,5 +234,3 @@ else
         net.SendToServer()
     end)
 end
-
-hook.Run('sandev_initialized')
