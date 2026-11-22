@@ -32,7 +32,7 @@ local function GetDummyLight()
         return dummyDLight
     end
 
-    dummyDLight = DynamicLight(0)
+    dummyDLight = _DynamicLight(0)
 
     if not dummyDLight then
         return nil

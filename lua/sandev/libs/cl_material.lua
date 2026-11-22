@@ -17,33 +17,25 @@ surface.CreateFont('SEvToolText', {
     antialias = true
 })
 
----@param rt ITexture
----@param text string
-local function DrawToolTexture(rt, text)
-    render.PushRenderTarget(rt)
-        render.Clear(255, 255, 255, 255, true, true)
+local function DrawToolTextureQueue()
+    for text, rt in pairs(toolTextureQueue) do
+        render.PushRenderTarget(rt)
+            render.Clear(255, 255, 255, 255, true, true)
 
-        cam.Start2D()
             local mkup = markup.Parse(
                 '<font=SEvToolText><colour=0,0,0>' .. text .. '</font></colour>',
                 60
             )
 
-            mkup:Draw(
-                TOOL_TEX_SIZE / 2, TOOL_TEX_SIZE / 2,
-                TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER,
-                255, 
-                TEXT_ALIGN_CENTER
-            )
-        cam.End2D()
-    render.PopRenderTarget()
-
-    return rt
-end
-
-local function DrawToolTextureQueue()
-    for text, rt in pairs(toolTextureQueue) do
-        DrawToolTexture(rt, text)
+            cam.Start2D()
+                mkup:Draw(
+                    TOOL_TEX_SIZE / 2, TOOL_TEX_SIZE / 2,
+                    TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER,
+                    255, 
+                    TEXT_ALIGN_CENTER
+                )
+            cam.End2D()
+        render.PopRenderTarget()
 
         toolTextureQueue[text] = nil
     end
@@ -63,12 +55,11 @@ function MaterialLib:CreateToolMaterial(text)
         return mat
     end
 
-    local rt = GetRenderTarget('sev_tool_' .. text, TOOL_TEX_SIZE, TOOL_TEX_SIZE)
+    local texName = 'sev_tool_texture_' .. text
+    local rt = GetRenderTarget(texName, TOOL_TEX_SIZE, TOOL_TEX_SIZE)
 
-    DrawToolTexture(rt, text)
-
-    mat = CreateMaterial(rt:GetName(), 'UnlitGeneric', {
-        ['$basetexture'] = rt:GetName(),
+    mat = CreateMaterial(texName, 'UnlitGeneric', {
+        ['$basetexture'] = texName,
         ['$color2'] = '[1 1 1]',
         ['$translucent'] = 1,
         ['$nomip'] = 1,
