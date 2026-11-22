@@ -24,10 +24,12 @@ local function DrawToolTexture(rt, text)
         render.Clear(255, 255, 255, 255, true, true)
 
         cam.Start2D()
-            local mkup = '<font=SEvToolText><colour=0,0,0>' .. text .. '</font></colour>'
-            local parsedMarkup = markup.Parse(mkup, 60)
+            local mkup = markup.Parse(
+                '<font=SEvToolText><colour=0,0,0>' .. text .. '</font></colour>',
+                60
+            )
 
-            parsedMarkup:Draw(
+            mkup:Draw(
                 TOOL_TEX_SIZE / 2, TOOL_TEX_SIZE / 2,
                 TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER,
                 255, 
