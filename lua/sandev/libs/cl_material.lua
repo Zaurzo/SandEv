@@ -3,9 +3,12 @@ local MaterialLib = SandEv.Base:Library()
 SandEv.Base.Material = MaterialLib
 
 local TOOL_TEX_SIZE = 64
-local toolMaterials = {}
+local RENDER_HOOK_NAME = 'sandev_draw_tool_textures'
 
-surface.CreateFont('SEvToolTextureName', {
+local toolMaterials = {}
+local toolTextureQueue = {}
+
+surface.CreateFont('SEvToolTextureText', {
     font = 'Arial',
     size = 14,
     weight = 1000,
@@ -15,31 +18,31 @@ surface.CreateFont('SEvToolTextureName', {
 })
 
 ---@param rt ITexture
----@param name string
-local function DrawToolTexture(rt, name)
+---@param text string
+local function DrawToolTexture(rt, text)
     render.PushRenderTarget(rt)
         render.Clear(255, 255, 255, 255, true, true)
 
         cam.Start2D()
-            surface.SetFont('SEvToolTextureName')
+            surface.SetFont('SEvToolTextureText')
 
-            local textW, textH = surface.GetTextSize(name)
+            local textW, textH = surface.GetTextSize(text)
             
             if textW > 60 then
-                local words = name:Split(' ')
+                local words = text:Split(' ')
 
                 if #words > 1 then
-                    name = table.concat(words, '\n')
+                    text = table.concat(words, '\n')
                 else
-                    name = name:sub(1, 8) .. '\n' .. name:sub(8)
+                    text = text:sub(1, 8) .. '\n' .. text:sub(8)
                 end
 
-                textW, textH = surface.GetTextSize(name)
+                textW, textH = surface.GetTextSize(text)
             end
 
             draw.DrawText(
-                name, 
-                'SEvToolTextureName', 
+                text, 
+                'SEvToolTextureText', 
                 TOOL_TEX_SIZE / 2, TOOL_TEX_SIZE / 2 - (textH / 2), 
                 Color(0, 0, 0), 
                 TEXT_ALIGN_CENTER
@@ -48,6 +51,16 @@ local function DrawToolTexture(rt, name)
     render.PopRenderTarget()
 
     return rt
+end
+
+local function DrawToolTextureQueue()
+    for text, rt in pairs(toolTextureQueue) do
+        DrawToolTexture(rt, text)
+
+        toolTextureQueue[text] = nil
+    end
+
+    hook.Remove('PostRender', RENDER_HOOK_NAME)
 end
 
 ---Creates a material with a texture that mimics Hammer tool textures.
@@ -64,9 +77,7 @@ function MaterialLib:CreateToolMaterial(text)
 
     local rt = GetRenderTarget('sev_tool_' .. text, TOOL_TEX_SIZE, TOOL_TEX_SIZE)
 
-    render.PushRenderTarget(rt)
-    render.Clear(255, 255, 255, 255, true, true)
-    render.PopRenderTarget()
+    DrawToolTexture(rt, text)
 
     mat = CreateMaterial(rt:GetName(), 'UnlitGeneric', {
         ['$basetexture'] = rt:GetName(),
@@ -77,12 +88,11 @@ function MaterialLib:CreateToolMaterial(text)
     })
 
     toolMaterials[text] = mat
+    toolTextureQueue[text] = rt
 
-    -- Draw to the tool texture outside of DrawTranslucent
-    -- Sometimes the text won't be drawn if I don't do this
-    timer.Simple(0.001, function()
-        DrawToolTexture(rt, text)
-    end)
+    -- I queue the render texture to be drawn again in PostRender just to make sure everything draws properly
+    -- If it's drawn in an ENT:Draw hook, for example, the text may not be properly drawn onto the texture
+    hook.Add('PostRender', RENDER_HOOK_NAME, DrawToolTextureQueue)
 
     return mat
 end
