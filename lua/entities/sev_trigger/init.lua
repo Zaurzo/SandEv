@@ -105,11 +105,19 @@ function ENT:EndTouch(ent)
     end
 end
 
-function ENT:OnRemove()
-    table.RemoveByValue(sphericalTriggerList, self)
-end
-
 hook.Add('EntityRemoved', 'sev_spherical_triggers', function(ent)
+    local class = ent:GetClass()
+
+    if class == 'sev_trigger' or scripted_ents.IsBasedOn(class, 'sev_trigger') then
+        local trigger = ent ---@as sev_trigger
+
+        if trigger:GetSpherical() then
+            table.RemoveByValue(sphericalTriggerList, trigger)
+        end
+
+        return
+    end
+
     for _, trigger in ipairs(sphericalTriggerList) do
         local inSphere = trigger._in_sphere
         if not inSphere[ent] then continue end
