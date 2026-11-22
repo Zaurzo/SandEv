@@ -26,10 +26,11 @@ end
 
 function ENT:OnExit(ent)
     local storedGravity = self._in_brush[ent]
+    if not storedGravity then return end
 
-    if storedGravity then
-        RestoreGravity(self, ent, storedGravity)
-    end
+    RestoreGravity(self, ent, storedGravity)
+
+    self._in_brush[ent] = nil
 end
 
 function ENT:OnRemove()
