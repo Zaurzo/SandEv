@@ -8,7 +8,7 @@ local RENDER_HOOK_NAME = 'sandev_draw_tool_textures'
 local toolMaterials = {}
 local toolTextureQueue = {}
 
-surface.CreateFont('SEvToolTextureText', {
+surface.CreateFont('SEvToolText', {
     font = 'Arial',
     size = 14,
     weight = 1000,
@@ -24,27 +24,13 @@ local function DrawToolTexture(rt, text)
         render.Clear(255, 255, 255, 255, true, true)
 
         cam.Start2D()
-            surface.SetFont('SEvToolTextureText')
+            local mkup = '<font=SEvToolText><colour=0,0,0>' .. text .. '</font></colour>'
+            local parsedMarkup = markup.Parse(mkup, 60)
 
-            local textW, textH = surface.GetTextSize(text)
-            
-            if textW > 60 then
-                local words = text:Split(' ')
-
-                if #words > 1 then
-                    text = table.concat(words, '\n')
-                else
-                    text = text:sub(1, 8) .. '\n' .. text:sub(8)
-                end
-
-                textW, textH = surface.GetTextSize(text)
-            end
-
-            draw.DrawText(
-                text, 
-                'SEvToolTextureText', 
-                TOOL_TEX_SIZE / 2, TOOL_TEX_SIZE / 2 - (textH / 2), 
-                Color(0, 0, 0), 
+            parsedMarkup:Draw(
+                TOOL_TEX_SIZE / 2, TOOL_TEX_SIZE / 2,
+                TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER,
+                255, 
                 TEXT_ALIGN_CENTER
             )
         cam.End2D()
