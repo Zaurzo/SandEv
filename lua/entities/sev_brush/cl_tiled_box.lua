@@ -1,86 +1,4 @@
 local TILE = 64
-local toolMaterials = {}
-
-surface.CreateFont('SEvToolTextureName', {
-    font = 'Arial',
-    size = 14,
-    weight = 1000,
-    blursize = 0,
-    scanlines = 0,
-    antialias = true
-})
-
----@param rt ITexture
----@param name string
-local function DrawToolTexture(rt, name)
-    render.PushRenderTarget(rt)
-        render.Clear(255, 255, 255, 255, true, true)
-
-        cam.Start2D()
-            surface.SetFont('SEvToolTextureName')
-
-            local textW, textH = surface.GetTextSize(name)
-            
-            if textW > 60 then
-                local words = name:Split(' ')
-
-                if #words > 1 then
-                    name = table.concat(words, '\n')
-                else
-                    name = name:sub(1, 8) .. '\n' .. name:sub(8)
-                end
-
-                textW, textH = surface.GetTextSize(name)
-            end
-
-            draw.DrawText(
-                name, 
-                'SEvToolTextureName', 
-                TILE / 2, TILE / 2 - (textH / 2), 
-                Color(0, 0, 0), 
-                TEXT_ALIGN_CENTER
-            )
-        cam.End2D()
-    render.PopRenderTarget()
-
-    return rt
-end
-
----@param name string
----@return IMaterial
-local function GetToolMaterial(name)
-    name = name:upper()
-
-    local mat = toolMaterials[name]
-
-    if mat then
-        return mat
-    end
-
-    local rt = GetRenderTarget('sev_tool_' .. name, TILE, TILE)
-
-    render.PushRenderTarget(rt)
-    render.Clear(255, 255, 255, 255, true, true)
-    render.PopRenderTarget()
-
-    mat = CreateMaterial(rt:GetName(), 'UnlitGeneric', {
-        ['$basetexture'] = rt:GetName(),
-        ['$color2'] = '[1 1 1]',
-        ['$translucent'] = 1,
-        ['$nomip'] = 1,
-        ['$alpha'] = 1
-    })
-
-    toolMaterials[name] = mat
-
-    -- Draw to the tool texture outside of DrawTranslucent
-    -- Sometimes the text won't be drawn if I don't do this
-    timer.Simple(0.001, function()
-        DrawToolTexture(rt, name)
-    end)
-
-    return mat
-end
 
 -- Behold, the only AI generated Lua code in this project down below.
 -- This mimics the hammer trigger entities when show_triggers is enabled.
@@ -190,7 +108,7 @@ function ENT:DrawBoxMesh(pos, mins, maxs, color, boxMesh)
         texMatrix:SetScale(flippedUV)
     end
 
-    local toolMat = GetToolMaterial(self.ToolName)
+    local toolMat = SandEv.Base.Material:CreateToolMaterial(self.ToolName)
 
     toolMat:SetVector('$color2', color:ToVector())
     toolMat:SetFloat('$alpha', alpha)
