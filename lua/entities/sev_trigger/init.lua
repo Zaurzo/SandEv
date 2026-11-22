@@ -26,6 +26,7 @@ function ENT:SetupSphere(event, pos, radius)
     self:SetRadius(radius)
 
     self._in_sphere = {}
+    self._sev_is_spherical_trigger = true
 
     table.insert(sphericalTriggerList, self)
 end
@@ -106,14 +107,8 @@ function ENT:EndTouch(ent)
 end
 
 hook.Add('EntityRemoved', 'sev_spherical_triggers', function(ent)
-    local class = ent:GetClass()
-
-    if class == 'sev_trigger' or scripted_ents.IsBasedOn(class, 'sev_trigger') then
-        local trigger = ent ---@as sev_trigger
-
-        if trigger:GetSpherical() then
-            table.RemoveByValue(sphericalTriggerList, trigger)
-        end
+    if ent._sev_is_spherical_trigger then
+        table.RemoveByValue(sphericalTriggerList, ent)
 
         return
     end
