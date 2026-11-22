@@ -25,18 +25,33 @@ local Entity = Entity
 -- 
 -- Note: DynamicLight creates a new userdata every call. This may be changed in
 -- a future update, so it's best I keep a look out.
-local dummyDLight = DynamicLight(0)
-local meta = getmetatable(dummyDLight)
-local dummyMeta = {}
+local dummyDLight
 
-for k, v in pairs(meta) do 
-    dummyMeta[k] = v 
+local function GetDummyLight()
+    if dummyDLight then
+        return dummyDLight
+    end
+
+    dummyDLight = DynamicLight(0)
+
+    if not dummyDLight then
+        return nil
+    end
+
+    local meta = getmetatable(dummyDLight)
+    local dummyMeta = {}
+
+    for k, v in pairs(meta) do 
+        dummyMeta[k] = v 
+    end
+
+    dummyMeta.__newindex = function() end
+    dummyMeta.__metatable = meta
+
+    debug.setmetatable(dummyDLight, dummyMeta)
+
+    return dummyDLight
 end
-
-dummyMeta.__newindex = function() end
-dummyMeta.__metatable = meta
-
-debug.setmetatable(dummyDLight, dummyMeta)
 
 function DynamicLight(index, ...)
     local ent = Entity(index)
@@ -46,7 +61,7 @@ function DynamicLight(index, ...)
     local isLightBlocked = IsValid(ent) and EntityLib:IsLightBlocked(ent)
 
     if isLightBlocked then
-        return dummyDLight
+        return GetDummyLight()
     end
 
     return _DynamicLight(index, ...)
